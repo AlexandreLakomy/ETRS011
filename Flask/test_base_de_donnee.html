@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Test Base de Données{% endblock %}
+{% block content %}
+<h2>Connexion à la base de données</h2>
+
+{% if tables %}
+    <p>Connexion réussie ✅</p>
+    <h3>Tables trouvées :</h3>
+    <ul>
+        {% for table in tables %}
+        <li>{{ table.table_name }}</li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>Aucune table trouvée.</p>
+{% endif %}
+{% endblock %}

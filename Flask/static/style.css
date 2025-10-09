@@ -86,3 +86,69 @@ footer {
     padding: 10px 0;
     margin-top: 50px;
 }
+
+/* --- Page SNMP --- */
+.snmp-container {
+    background-color: #f9f9f9;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    max-width: 90%;
+    margin: 40px auto;
+}
+
+.snmp-container h2 {
+    text-align: center;
+    color: #2c3e50;
+    margin-bottom: 25px;
+}
+
+.snmp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 15px;
+}
+
+.snmp-table th {
+    background-color: #4A6785;
+    color: white;
+    padding: 12px;
+    text-align: left;
+    border-radius: 6px 6px 0 0;
+}
+
+.snmp-table td {
+    background-color: white;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    vertical-align: top;
+}
+
+.snmp-table tr:nth-child(even) td {
+    background-color: #f2f6fa;
+}
+
+.status {
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 10px;
+}
+
+.status.up {
+    background-color: #2ecc71;
+    color: white;
+}
+
+.status.down {
+    background-color: #e74c3c;
+    color: white;
+}
+
+pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: monospace;
+    font-size: 13px;
+}
+
