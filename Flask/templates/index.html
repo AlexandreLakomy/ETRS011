@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Accueil - Supervision SNMP{% endblock %}
+
+{% block content %}
+<section class="welcome">
+    <h2>Bienvenue sur la plateforme de supervision</h2>
+    <p>
+        Ce site permet de surveiller en temps réel les équipements réseau via le protocole <strong>SNMP</strong>.  
+        Vous pouvez consulter l’état du parc, visualiser des statistiques et accéder aux journaux d’activité.
+    </p>
+
+    <div class="cards">
+        <div class="card">
+            <h3>Tableau de bord</h3>
+            <p>Consultez l’état global du réseau et les alertes en temps réel.</p>
+            <a href="{{ url_for('dashboard') }}" class="btn">Accéder</a>
+        </div>
+
+        <div class="card">
+            <h3>Logs</h3>
+            <p>Consultez les journaux et événements du système de supervision.</p>
+            <a href="{{ url_for('logs') }}" class="btn">Voir les logs</a>
+        </div>
+
+        <div class="card">
+            <h3>Configuration</h3>
+            <p>Ajoutez ou modifiez les équipements à superviser.</p>
+            <a href="{{ url_for('config') }}" class="btn">Configurer</a>
+        </div>
+    </div>
+</section>
+{% endblock %}
