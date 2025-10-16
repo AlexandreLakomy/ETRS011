@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Supervision SNMP{% endblock %}
+
+{% block content %}
+<div class="snmp-container">
+    <h2>État des équipements SNMP</h2>
+    <table class="snmp-table">
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Adresse IP</th>
+                <th>Statut</th>
+                <th>Informations SNMP</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in results %}
+            <tr>
+                <td>{{ r.name }}</td>
+                <td>{{ r.ip }}</td>
+                <td>
+                    {% if r.status == "UP" %}
+                        <span class="status up">🟢 UP</span>
+                    {% else %}
+                        <span class="status down">🔴 DOWN</span>
+                    {% endif %}
+                </td>
+                <td><pre>{{ r.info }}</pre></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
