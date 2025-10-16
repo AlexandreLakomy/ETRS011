@@ -1,64 +1,65 @@
-from flask import Flask, render_template, redirect, url_for
-import psycopg2
-from psycopg2.extras import RealDictCursor
+from flask import Flask, render_template
 from pysnmp.hlapi import getCmd, SnmpEngine, CommunityData, UdpTransportTarget, ContextData, ObjectType, ObjectIdentity
+import sqlite3
 
 app = Flask(__name__)
 
-# Page d'accueil
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-# Page de connexion
-@app.route('/login')
-def login():
-    return render_template('login.html')
-
-# Tableau de bord
-@app.route('/dashboard')
-def dashboard():
-    return render_template('dashboard.html')
-
-# Page de logs
-@app.route('/logs')
-def logs():
-    return render_template('logs.html')
-
-# Page de configuration (admin)
-@app.route('/config')
-def config():
-    return render_template('config.html')
-
-# Page admin (gestion utilisateurs)
-@app.route('/admin')
-def admin():
-    return render_template('admin.html')
-
+# --- Connexion à la base SQLite ---
 def get_db_connection():
-    conn = psycopg2.connect(
-        host="localhost",
-        database="postgres",
-        user="postgres",
-        password="alex"  # ton mot de passe PostgreSQL
-    )
+    conn = sqlite3.connect("BDD/ETRS711DBROWSER.db")
+    conn.row_factory = sqlite3.Row
     return conn
 
-@app.route('/test_base_de_donnee')
-def test_base_de_donnee():
+
+# --------------------------------------------------------------------
+# 🏠 Page d'accueil
+# --------------------------------------------------------------------
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+
+# --------------------------------------------------------------------
+# 🔍 Test de la base de données (SQLite)
+# --------------------------------------------------------------------
+@app.route('/bdd')
+def test_bdd():
     try:
         conn = get_db_connection()
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public';")
-        tables = cur.fetchall()
-        cur.close()
+        cur = conn.cursor()
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = [row['name'] for row in cur.fetchall()]
         conn.close()
         return render_template('test_base_de_donnee.html', tables=tables)
     except Exception as e:
-        return f"Erreur de connexion à la base de données : {e}"
-    
+        return f"Erreur lors de la connexion à la base SQLite : {e}"
 
-# --- Fonction SNMP ---
+
+# --------------------------------------------------------------------
+# 📊 Tableau de bord : affichage des données SQLite
+# --------------------------------------------------------------------
+@app.route('/dashboard')
+def dashboard():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT E.nom AS equipement, O.nomParametre, DV.valeur, DE.timestamp
+        FROM DonneesValeurs DV
+        JOIN DonneesEquipement DE ON DV.donneesEquipement_id = DE.id
+        JOIN MoniteurSNMP M ON DE.moniteur_id = M.id
+        JOIN Equipement E ON M.equipement_id = E.id
+        JOIN OID O ON DV.oid_id = O.id
+        ORDER BY DE.timestamp DESC
+        LIMIT 20
+    """)
+    data = cur.fetchall()
+    conn.close()
+    return render_template('dashboard.html', data=data)
+
+
+# --------------------------------------------------------------------
+# 🧠 Fonction SNMP : vérifie l’état des équipements
+# --------------------------------------------------------------------
 def check_snmp_device(ip, community):
     try:
         iterator = getCmd(
@@ -82,8 +83,10 @@ def check_snmp_device(ip, community):
         return {"status": "DOWN", "info": str(e)}
 
 
-# --- Route Flask ---
-@app.route("/snmp_check")
+# --------------------------------------------------------------------
+# 📡 Vérification SNMP
+# --------------------------------------------------------------------
+@app.route('/snmp')
 def snmp_check():
     devices = [
         {"name": "NAS", "ip": "192.168.176.2", "community": "passprojet"},
@@ -103,5 +106,28 @@ def snmp_check():
     return render_template("snmp_check.html", results=results)
 
 
+# --------------------------------------------------------------------
+# ⚙️ Autres pages du site
+# --------------------------------------------------------------------
+@app.route('/login')
+def login():
+    return render_template('login.html')
+
+@app.route('/logs')
+def logs():
+    return render_template('logs.html')
+
+@app.route('/config')
+def config():
+    return render_template('config.html')
+
+@app.route('/admin')
+def admin():
+    return render_template('admin.html')
+
+
+# --------------------------------------------------------------------
+# 🚀 Lancement du serveur Flask
+# --------------------------------------------------------------------
 if __name__ == "__main__":
     app.run(host="192.168.141.145", port=5000, debug=True)
