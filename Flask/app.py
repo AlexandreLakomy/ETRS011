@@ -1,4 +1,5 @@
 import signal
+import sys
 from flask import Flask, render_template # type: ignore
 from pysnmp.hlapi import getCmd, SnmpEngine, CommunityData, UdpTransportTarget, ContextData, ObjectType, ObjectIdentity # type: ignore
 import sqlite3
@@ -14,7 +15,7 @@ app = Flask(__name__)
 # --------------------------------------------------------------------
 def get_db_connection():
     # Chemin absolu vers ta base de données
-    db_path = r"C:\Users\Alexa\OneDrive\Documents\M2\ETRS011\Flask\BDD\ETRS711DBROWSER.db"
+    db_path = r"C:\Users\Alexa\OneDrive\Documents\M2\ETRS011\Flask\BDD\BDD_LeFlour"
     
     if not os.path.exists(db_path):
         raise FileNotFoundError(f"Base de données introuvable à l'emplacement : {db_path}")
@@ -50,23 +51,17 @@ def dashboard():
 
     cur.execute("""
         SELECT 
-            DV.id AS id_valeur,
-            DV.donneesEquipement_id,
-            DV.oid_id,
-            DV.valeur,
-            DE.id AS id_donnees,
-            DE.moniteur_id,
-            DE.timestamp,
-            M.id AS id_moniteur,
-            M.equipement_id,
-            E.id AS id_equipement,
+            D.id AS id_donnee,
             E.nom AS equipement,
-            O.nomParametre
-        FROM DonneesValeurs DV
-        JOIN DonneesEquipement DE ON DV.donneesEquipement_id = DE.id
-        JOIN MoniteurSNMP M ON DE.moniteur_id = M.id
-        JOIN Equipement E ON M.equipement_id = E.id
-        JOIN OID O ON DV.oid_id = O.id;
+            E.ip AS ip,
+            O.nomParametre AS parametre,
+            O.identifiant AS oid,
+            D.valeur AS valeur,
+            D.timestamp AS date
+        FROM DonneeEquipement D
+        JOIN Equipement E ON D.equipement_id = E.id
+        JOIN OID O ON D.oid_id = O.id
+        ORDER BY D.timestamp DESC;
     """)
 
     data = cur.fetchall()
@@ -163,22 +158,12 @@ def snmp_check():
 # 🚀 Stocker les données SNMP dans la BDD
 # --------------------------------------------------------------------
 def insert_snmp_value(equipement_id, oid_id, valeur):
-    conn = sqlite3.connect(r"C:\Users\Alexa\OneDrive\Documents\M2\ETRS011\Flask\BDD\ETRS711DBROWSER.db")
+    conn = get_db_connection()
     cur = conn.cursor()
-
-    # 1️⃣ Crée un enregistrement dans DonneesEquipement
     cur.execute(
-        "INSERT INTO DonneesEquipement (moniteur_id, timestamp) VALUES (?, ?)",
-        (equipement_id, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        "INSERT INTO DonneeEquipement (equipement_id, oid_id, valeur) VALUES (?, ?, ?)",
+        (equipement_id, oid_id, valeur)
     )
-    donnees_equipement_id = cur.lastrowid
-
-    # 2️⃣ Ajoute la valeur SNMP récupérée
-    cur.execute(
-        "INSERT INTO DonneesValeurs (donneesEquipement_id, oid_id, valeur) VALUES (?, ?, ?)",
-        (donnees_equipement_id, oid_id, valeur)
-    )
-
     conn.commit()
     conn.close()
 
