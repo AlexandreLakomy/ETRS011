@@ -3,4 +3,29 @@
 {% block content %}
 <h2>Tableau de bord</h2>
 <p>Bienvenue sur le tableau de bord de supervision.</p>
+
+{% if data %}
+<table>
+    <thead>
+        <tr>
+            <th>Équipement</th>
+            <th>Paramètre</th>
+            <th>Valeur</th>
+            <th>Horodatage</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in data %}
+        <tr>
+            <td>{{ row['equipement'] }}</td>
+            <td>{{ row['nomParametre'] }}</td>
+            <td>{{ row['valeur'] }}</td>
+            <td>{{ row['timestamp'] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>Aucune donnée disponible dans la base de données.</p>
+{% endif %}
 {% endblock %}
