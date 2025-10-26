@@ -70,14 +70,12 @@ def dashboard():
     return render_template('dashboard.html', data=data)
 
 
-
 # --------------------------------------------------------------------
 # 📜 Logs
 # --------------------------------------------------------------------
 @app.route('/logs')
 def logs():
     return render_template('logs.html')
-
 
 # --------------------------------------------------------------------
 # ⚙️ Configuration
@@ -102,8 +100,8 @@ def check_snmp_device(ip, community, oid):
     try:
         iterator = getCmd(
             SnmpEngine(),
-            CommunityData(community, mpModel=1),
-            UdpTransportTarget((ip, 161), timeout=2, retries=1),
+            CommunityData(community, mpModel=1),  # SNMPv2c
+            UdpTransportTarget((ip, 161), timeout=3, retries=1),
             ContextData(),
             ObjectType(ObjectIdentity(oid))
         )
@@ -113,13 +111,12 @@ def check_snmp_device(ip, community, oid):
         if errorIndication:
             return {"status": "DOWN", "info": str(errorIndication)}
         elif errorStatus:
-            return {"status": "DOWN", "info": errorStatus.prettyPrint()}
+            return {"status": "DOWN", "info": str(errorStatus.prettyPrint())}
         else:
-            for varBind in varBinds:
-                return {"status": "UP", "info": str(varBind)}
+            return {"status": "UP", "info": str(varBinds[0])}
+
     except Exception as e:
         return {"status": "DOWN", "info": str(e)}
-
 
 
 # --------------------------------------------------------------------
@@ -169,34 +166,46 @@ def insert_snmp_value(equipement_id, oid_id, valeur):
 
 
 def collect_snmp_data():
-    """Collecte et stocke les données SNMP du NAS uniquement."""
-    devices = [
-        {
-            "name": "NAS",
-            "ip": "192.168.176.2",
-            "community": "passprojet",
-            "equipement_id": 1,
-            "oid_id": 1,
-            "oid": "1.3.6.1.4.1.6574.1.2.0"  # Température NAS Synology
-        }
-    ]
+    """Collecte et stocke les données SNMP de tous les équipements présents dans la BDD."""
+    conn = get_db_connection()
+    cur = conn.cursor()
 
-    for device in devices:
-        res = check_snmp_device(device["ip"], device["community"], device["oid"])
+    # 1️⃣ Récupérer tous les équipements
+    cur.execute("SELECT id, nom, ip, community FROM Equipement;")
+    equipements = cur.fetchall()
 
-        if res["status"] == "UP":
-            try:
-                # Extraction de la valeur SNMP renvoyée
-                valeur_str = res["info"].split("=")[-1].strip()
-                valeur = float(valeur_str)
-                insert_snmp_value(device["equipement_id"], device["oid_id"], valeur)
-                print(f"[{datetime.datetime.now():%Y-%m-%d %H:%M:%S}] ✅ Donnée enregistrée pour {device['name']} : {valeur}")
-            except ValueError:
-                print(f"[{datetime.datetime.now():%Y-%m-%d %H:%M:%S}] ⚠️ Donnée non numérique reçue : {res['info']}")
-            except Exception as e:
-                print(f"[{datetime.datetime.now():%Y-%m-%d %H:%M:%S}] ⚠️ Erreur conversion ou insertion SNMP : {e}")
-        else:
-            print(f"[{datetime.datetime.now():%Y-%m-%d %H:%M:%S}] ❌ {device['name']} injoignable : {res['info']}")
+    for equipement in equipements:
+        equipement_id = equipement["id"]
+        equipement_nom = equipement["nom"]
+        equipement_ip = equipement["ip"]
+        community = equipement["community"]
+
+        # 2️⃣ Récupérer les OID associés à cet équipement
+        cur.execute("SELECT id, identifiant, nomParametre FROM OID WHERE equipement_id = ?", (equipement_id,))
+        oids = cur.fetchall()
+
+        for oid in oids:
+            oid_id = oid["id"]
+            oid_value = oid["identifiant"]
+            param_name = oid["nomParametre"]
+
+            # 3️⃣ Interroger le périphérique via SNMP
+            res = check_snmp_device(equipement_ip, community, oid_value)
+
+            if res["status"] == "UP":
+                try:
+                    valeur_str = res["info"].split("=")[-1].strip()
+                    valeur = float(valeur_str)
+                    insert_snmp_value(equipement_id, oid_id, valeur)
+                    print(f"[{datetime.datetime.now():%Y-%m-%d %H:%M:%S}] ✅ {param_name} ({equipement_nom}) = {valeur}")
+                except ValueError:
+                    print(f"[{datetime.datetime.now():%Y-%m-%d %H:%M:%S}] ⚠️ Valeur non numérique reçue pour {param_name} ({equipement_nom}) : {res['info']}")
+                except Exception as e:
+                    print(f"[{datetime.datetime.now():%Y-%m-%d %H:%M:%S}] ⚠️ Erreur d’insertion pour {param_name} ({equipement_nom}) : {e}")
+            else:
+                print(f"[{datetime.datetime.now():%Y-%m-%d %H:%M:%S}] ❌ {equipement_nom} injoignable : {res['info']}")
+
+    conn.close()
 
 
 async def poll_snmp_data():
@@ -215,7 +224,7 @@ async def poll_snmp_data():
 # 🚀 Lancement du serveur
 # --------------------------------------------------------------------
 def run_flask():
-    app.run(host="10.7.253.55", port=5000, debug=True, use_reloader=False)
+    app.run(host="10.7.253.61", port=5000, debug=True, use_reloader=False)
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()

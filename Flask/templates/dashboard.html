@@ -1,31 +1,93 @@
 {% extends 'base.html' %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
-<h2>Tableau de bord</h2>
-<p>Bienvenue sur le tableau de bord de supervision.</p>
+<h2 class="dashboard-title">Tableau de bord</h2>
+<p class="dashboard-subtitle">Bienvenue sur le tableau de bord de supervision.</p>
 
 {% if data %}
-<table>
-    <thead>
-        <tr>
-            <th>Équipement</th>
-            <th>Paramètre</th>
-            <th>Valeur</th>
-            <th>Horodatage</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in data %}
-        <tr>
-            <td>{{ row['equipement'] }}</td>
-            <td>{{ row['parametre'] }}</td>
-            <td>{{ row['valeur'] }}</td>
-            <td>{{ row['date'] }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="table-container">
+    <table class="dashboard-table">
+        <thead>
+            <tr>
+                <th>Équipement</th>
+                <th>Paramètre</th>
+                <th>Valeur</th>
+                <th>Horodatage</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+            <tr>
+                <td>{{ row['equipement'] }}</td>
+                <td>{{ row['parametre'] }}</td>
+                <td class="value-cell">{{ row['valeur'] }}</td>
+                <td>{{ row['date'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% else %}
-<p>Aucune donnée disponible dans la base de données.</p>
+<p class="no-data">Aucune donnée disponible dans la base de données.</p>
 {% endif %}
+
+<style>
+.table-container {
+    display: flex;
+    justify-content: center;
+}
+
+.dashboard-table {
+    width: 85%;
+    border-collapse: collapse;
+    table-layout: fixed; /* ✅ fixe les largeurs des colonnes */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.dashboard-table th,
+.dashboard-table td {
+    padding: 12px 15px;
+    text-align: center; /* ✅ centre le texte pour toutes les colonnes */
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.dashboard-table th {
+    background-color: #1b2a4e;
+    color: white;
+    font-weight: 600;
+}
+
+.dashboard-table tr:hover {
+    background-color: #f5f7fa;
+}
+
+.value-cell {
+    font-weight: 600;
+    color: #2a4d85;
+}
+
+.dashboard-title {
+    text-align: center;
+    font-size: 1.8em;
+    font-weight: 700;
+    margin-top: 20px;
+    color: #1b2a4e;
+}
+
+.dashboard-subtitle {
+    text-align: center;
+    font-size: 1em;
+    color: #555;
+    margin-bottom: 25px;
+}
+
+.no-data {
+    text-align: center;
+    color: #888;
+    margin-top: 30px;
+}
+</style>
 {% endblock %}
