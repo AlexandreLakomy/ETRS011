@@ -1,6 +1,7 @@
 import signal
 import sys
-from flask import Flask, render_template # type: ignore
+from urllib import request
+from flask import Flask, render_template, request, redirect, url_for # type: ignore
 from pysnmp.hlapi import getCmd, SnmpEngine, CommunityData, UdpTransportTarget, ContextData, ObjectType, ObjectIdentity # type: ignore
 import sqlite3
 import os
@@ -8,21 +9,23 @@ import datetime
 import asyncio
 import threading, time
 
+
 app = Flask(__name__)
 
 # --------------------------------------------------------------------
 # 🔌 Connexion à la base SQLite
 # --------------------------------------------------------------------
 def get_db_connection():
-    # Chemin absolu vers ta base de données
     db_path = r"C:\Users\Alexa\OneDrive\Documents\M2\ETRS011\Flask\BDD\BDD_LeFlour"
-    
+
     if not os.path.exists(db_path):
         raise FileNotFoundError(f"Base de données introuvable à l'emplacement : {db_path}")
-    
-    conn = sqlite3.connect(db_path)
+
+    # Timeout de 5 secondes → SQLite réessaie si la base est temporairement bloquée
+    conn = sqlite3.connect(db_path, timeout=5)
     conn.row_factory = sqlite3.Row
     return conn
+
 
 
 # --------------------------------------------------------------------
@@ -69,6 +72,75 @@ def dashboard():
 
     return render_template('dashboard.html', data=data)
 
+# --------------------------------------------------------------------
+#  Ajouter/Supprimer un équipement
+# --------------------------------------------------------------------
+@app.route('/ajouter_equipement', methods=['GET', 'POST'])
+def ajouter_equipement():
+    if request.method == 'POST':
+        nom = request.form['nom']
+        ip = request.form['ip']
+        type_eq = request.form['type']
+        community = request.form['community']
+        intervalle = request.form['intervalle']
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO Equipement (nom, ip, type, community, intervalle) VALUES (?, ?, ?, ?, ?)",
+            (nom, ip, type_eq, community, intervalle)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return redirect(url_for('ajouter_equipement', success=True))
+
+    success = request.args.get('success')
+    return render_template('ajouter_equipement.html', success=success)
+
+
+@app.route('/supprimer_equipement/<int:id>')
+def supprimer_equipement(id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM Equipement WHERE id = ?", (id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('config'))
+
+# --------------------------------------------------------------------
+# ✏️ Modifier un équipement
+# --------------------------------------------------------------------
+@app.route('/modifier_equipement/<int:id>', methods=['GET', 'POST'])
+def modifier_equipement(id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    if request.method == 'POST':
+        nom = request.form['nom']
+        ip = request.form['ip']
+        type_eq = request.form['type']
+        community = request.form['community']
+        intervalle = request.form['intervalle']
+
+        cur.execute("""
+            UPDATE Equipement
+            SET nom = ?, ip = ?, type = ?, community = ?, intervalle = ?
+            WHERE id = ?
+        """, (nom, ip, type_eq, community, intervalle, id))
+        conn.commit()
+        conn.close()
+        return redirect(url_for('config'))
+
+    cur.execute("SELECT * FROM Equipement WHERE id = ?", (id,))
+    equipement = cur.fetchone()
+    conn.close()
+
+    if equipement is None:
+        return "Équipement introuvable", 404
+
+    return render_template('modifier_equipement.html', equipement=equipement)
 
 # --------------------------------------------------------------------
 # 📜 Logs
@@ -82,8 +154,13 @@ def logs():
 # --------------------------------------------------------------------
 @app.route('/config')
 def config():
-    return render_template('config.html')
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, nom, ip, type, community, intervalle FROM Equipement;")
+    equipements = cur.fetchall()
+    conn.close()
 
+    return render_template('config.html', equipements=equipements)
 
 # --------------------------------------------------------------------
 # 👥 Administration
@@ -224,7 +301,7 @@ async def poll_snmp_data():
 # 🚀 Lancement du serveur
 # --------------------------------------------------------------------
 def run_flask():
-    app.run(host="10.7.253.61", port=5000, debug=True, use_reloader=False)
+    app.run(host="10.7.253.66", port=5000, debug=True, use_reloader=False)
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
