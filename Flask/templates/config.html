@@ -17,6 +17,12 @@
             margin-bottom: 10px;
         }
 
+        h2 {
+            font-size: 22px;
+            color: #333;
+            margin-top: 50px;
+        }
+
         table {
             margin: 30px auto;
             border-collapse: collapse;
@@ -61,43 +67,60 @@
             border-radius: 4px;
         }
 
-        .edit-btn {
-            background-color: #2E8B57;
-        }
+        .edit-btn { background-color: #2E8B57; }
+        .edit-btn:hover { background-color: #206d45; }
 
-        .edit-btn:hover {
-            background-color: #206d45;
-        }
+        .delete-btn { background-color: #c0392b; }
+        .delete-btn:hover { background-color: #992d22; }
 
-        .delete-btn {
-            background-color: #c0392b;
-        }
-
-        .delete-btn:hover {
-            background-color: #992d22;
-        }
+        .home-btn { background-color: #6c757d; }
+        .home-btn:hover { background-color: #5a6268; }
 
         .no-data {
             font-style: italic;
             color: #777;
             margin-top: 20px;
         }
+
+        .hidden-row {
+            display: none;
+        }
     </style>
+
     <script>
+        // 🔧 Suppression d’un équipement
         function confirmDelete(id, nom) {
             if (confirm(`⚠️ Voulez-vous vraiment supprimer l'équipement "${nom}" ?`)) {
                 window.location.href = `/supprimer_equipement/${id}`;
             }
         }
+
+        // 🔧 Suppression d’un OID
+        function confirmDeleteOID(id, nomParametre) {
+            if (confirm(`⚠️ Voulez-vous vraiment supprimer l'OID "${nomParametre}" ?`)) {
+                window.location.href = `/supprimer_oid/${id}`;
+            }
+        }
+
+        // 🔁 Afficher / masquer les lignes supplémentaires
+        function toggleRows(tableId, buttonId) {
+            const rows = document.querySelectorAll(`#${tableId} .extra-row`);
+            const button = document.getElementById(buttonId);
+            const showing = button.dataset.showing === "true";
+            rows.forEach(row => row.style.display = showing ? "none" : "table-row");
+            button.textContent = showing ? "Afficher plus" : "Afficher moins";
+            button.dataset.showing = !showing;
+        }
     </script>
+
 </head>
 <body>
     <h1>Configuration des Équipements</h1>
-
+    <button class="home-btn" onclick="window.location.href='/'">🏠 Retour à l'accueil</button>
     <button onclick="window.location.href='/ajouter_equipement'">➕ Ajouter un équipement</button>
 
     {% if equipements %}
-        <table>
+        <table id="equipement-table">
             <tr>
                 <th>ID</th>
                 <th>Nom</th>
@@ -108,22 +131,71 @@
                 <th>Actions</th>
             </tr>
             {% for eq in equipements %}
-            <tr>
-                <td>{{ eq['id'] }}</td>
-                <td>{{ eq['nom'] }}</td>
-                <td>{{ eq['ip'] }}</td>
-                <td>{{ eq['type'] }}</td>
-                <td>{{ eq['community'] }}</td>
-                <td>{{ eq['intervalle'] }}</td>
+            <tr class="{% if loop.index > 10 %}extra-row hidden-row{% endif %}">
+                <td>{{ eq.id }}</td>
+                <td>{{ eq.nom }}</td>
+                <td>{{ eq.ip }}</td>
+                <td>{{ eq.type }}</td>
+                <td>{{ eq.community }}</td>
+                <td>{{ eq.intervalle }}</td>
                 <td>
-                    <button class="action-btn edit-btn" onclick="window.location.href='/modifier_equipement/{{ eq['id'] }}'">✏️ Modifier</button>
-                    <button class="action-btn delete-btn" onclick="confirmDelete('{{ eq['id'] }}', '{{ eq['nom'] }}')">🗑️ Supprimer</button>
+                    <button class="action-btn edit-btn" onclick="window.location.href='/modifier_equipement/{{ eq.id }}'">✏️ Modifier</button>
+                    <button class="action-btn delete-btn" onclick="confirmDelete('{{ eq.id }}', '{{ eq.nom }}')">🗑️ Supprimer</button>
                 </td>
             </tr>
             {% endfor %}
         </table>
+        {% if equipements|length > 10 %}
+            <button id="showMoreEquip" data-showing="false" onclick="toggleRows('equipement-table','showMoreEquip')">Afficher plus</button>
+        {% endif %}
     {% else %}
         <p class="no-data">Aucun équipement enregistré pour le moment.</p>
     {% endif %}
+
+    <!-- Tableau des OIDs -->
+    <h2>Configuration des OIDs</h2>
+    <button class="home-btn" onclick="window.location.href='/'">🏠 Retour à l'accueil</button>
+    <button onclick="window.location.href='/ajouter_oid'">➕ Ajouter un OID</button>
+
+    {% if oids %}
+        <table id="tableOids">
+            <tr>
+                <th>ID</th>
+                <th>Nom du paramètre</th>
+                <th>Identifiant (OID)</th>
+                <th>Type</th>
+                <th>Équipement associé</th>
+                <th>Alerte active</th>
+                <th>Actions</th>
+            </tr>
+            {% for oid in oids %}
+            <tr class="{% if loop.index > 10 %}extra-row hidden-row{% endif %}">
+                <td>{{ oid.id }}</td>
+                <td>{{ oid.nomParametre }}</td>
+                <td>{{ oid.identifiant }}</td>
+                <td>{{ oid.typeValeur }}</td>
+                <td>{{ oid.equipement_nom or "Aucun" }}</td>
+                <td>
+                    <input type="checkbox"
+                        {% if oid.alerte_active == 1 %}checked{% endif %}
+                        onchange="toggleAlerte('{{ oid.id }}', this.checked)">
+                </td>
+                <td>
+                    <button class="action-btn edit-btn" onclick="window.location.href='/modifier_oid/{{ oid.id }}'">✏️ Modifier</button>
+                    <button class="action-btn delete-btn" onclick="confirmDeleteOID('{{ oid.id }}', '{{ oid.nomParametre }}')">🗑️ Supprimer</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        {% if oids|length > 10 %}
+            <button id="showMoreOids" data-showing="false" onclick="toggleRows('tableOids','showMoreOids')">
+                Afficher plus
+            </button>
+        {% endif %}
+    {% else %}
+        <p class="no-data">Aucun OID enregistré pour le moment.</p>
+    {% endif %}
+
 </body>
 </html>

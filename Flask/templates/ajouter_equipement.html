@@ -65,10 +65,6 @@
 <body>
     <h1>Ajouter une Machine à Superviser</h1>
 
-    {% if success %}
-        <p class="success">✅ L’équipement a bien été ajouté !</p>
-    {% endif %}
-
     <form method="POST" action="/ajouter_equipement">
         <input type="text" name="nom" placeholder="Nom" required>
         <input type="text" name="ip" placeholder="Adresse IP" required>

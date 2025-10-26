@@ -26,8 +26,6 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-
-
 # --------------------------------------------------------------------
 # 🏠 Page d'accueil
 # --------------------------------------------------------------------
@@ -35,14 +33,12 @@ def get_db_connection():
 def index():
     return render_template('index.html')
 
-
 # --------------------------------------------------------------------
 # 🔑 Page de connexion
 # --------------------------------------------------------------------
 @app.route('/login')
 def login():
     return render_template('login.html')
-
 
 # --------------------------------------------------------------------
 # 📊 Tableau de bord (données SQLite)
@@ -73,7 +69,32 @@ def dashboard():
     return render_template('dashboard.html', data=data)
 
 # --------------------------------------------------------------------
-#  Ajouter/Supprimer un équipement
+# ⚙️ Configuration
+# --------------------------------------------------------------------
+@app.route('/config')
+def config():
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Récupération des équipements
+    cur.execute("SELECT id, nom, ip, type, community, intervalle FROM Equipement;")
+    equipements = cur.fetchall()
+
+    # Récupération des OIDs
+    cur.execute("""
+        SELECT O.id, O.identifiant, O.nomParametre, O.typeValeur, E.nom AS equipement_nom
+        FROM OID O
+        LEFT JOIN Equipement E ON O.equipement_id = E.id
+        ORDER BY O.id ASC;
+    """)
+    oids = cur.fetchall()
+
+    conn.close()
+    return render_template('config.html', equipements=equipements, oids=oids)
+
+
+# --------------------------------------------------------------------
+#  Ajouter/Modifier/Supprimer un équipement
 # --------------------------------------------------------------------
 @app.route('/ajouter_equipement', methods=['GET', 'POST'])
 def ajouter_equipement():
@@ -94,10 +115,10 @@ def ajouter_equipement():
         cur.close()
         conn.close()
 
-        return redirect(url_for('ajouter_equipement', success=True))
+        # 👉 Redirige vers la page de configuration
+        return redirect(url_for('config'))
 
-    success = request.args.get('success')
-    return render_template('ajouter_equipement.html', success=success)
+    return render_template('ajouter_equipement.html')
 
 
 @app.route('/supprimer_equipement/<int:id>')
@@ -109,9 +130,7 @@ def supprimer_equipement(id):
     conn.close()
     return redirect(url_for('config'))
 
-# --------------------------------------------------------------------
-# ✏️ Modifier un équipement
-# --------------------------------------------------------------------
+
 @app.route('/modifier_equipement/<int:id>', methods=['GET', 'POST'])
 def modifier_equipement(id):
     conn = get_db_connection()
@@ -142,6 +161,95 @@ def modifier_equipement(id):
 
     return render_template('modifier_equipement.html', equipement=equipement)
 
+
+# --------------------------------------------------------------------
+# 🧩 Ajouter/Modifier/Supprimer d'un OID
+# --------------------------------------------------------------------
+@app.route('/oids')
+def oids():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT O.id, O.identifiant, O.nomParametre, O.typeValeur, 
+               O.seuilMin, O.seuilMax, O.alerte_active, E.nom AS equipement_nom
+        FROM OID O
+        LEFT JOIN Equipement E ON O.equipement_id = E.id
+    """)
+    oids = cur.fetchall()
+    conn.close()
+    return render_template('oids.html', oids=oids)
+
+
+@app.route('/ajouter_oid', methods=['GET', 'POST'])
+def ajouter_oid():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, nom FROM Equipement;")
+    equipements = cur.fetchall()
+
+    if request.method == 'POST':
+        identifiant = request.form['identifiant']
+        nom_parametre = request.form['nomParametre']
+        type_valeur = request.form['typeValeur']
+        equipement_id = request.form['equipement_id']
+        seuil_min = request.form['seuilMin'] or None
+        seuil_max = request.form['seuilMax'] or None
+        alerte_active = 1 if 'alerte_active' in request.form else 0
+
+        cur.execute("""
+            INSERT INTO OID (identifiant, nomParametre, typeValeur, equipement_id, seuilMin, seuilMax, alerte_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (identifiant, nom_parametre, type_valeur, equipement_id, seuil_min, seuil_max, alerte_active))
+        conn.commit()
+        conn.close()
+        return redirect(url_for('config'))
+
+    conn.close()
+    return render_template('ajouter_oid.html', equipements=equipements)
+
+
+@app.route('/modifier_oid/<int:id>', methods=['GET', 'POST'])
+def modifier_oid(id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    if request.method == 'POST':
+        identifiant = request.form['identifiant']
+        nom_parametre = request.form['nomParametre']
+        type_valeur = request.form['typeValeur']
+        equipement_id = request.form['equipement_id']
+        seuil_min = request.form['seuilMin'] or None
+        seuil_max = request.form['seuilMax'] or None
+        alerte_active = 1 if 'alerte_active' in request.form else 0
+
+        cur.execute("""
+            UPDATE OID
+            SET identifiant=?, nomParametre=?, typeValeur=?, equipement_id=?, seuilMin=?, seuilMax=?, alerte_active=?
+            WHERE id=?
+        """, (identifiant, nom_parametre, type_valeur, equipement_id, seuil_min, seuil_max, alerte_active, id))
+        conn.commit()
+        conn.close()
+        return redirect(url_for('config'))
+
+    cur.execute("SELECT * FROM OID WHERE id=?", (id,))
+    oid = cur.fetchone()
+    cur.execute("SELECT id, nom FROM Equipement;")
+    equipements = cur.fetchall()
+    conn.close()
+
+    return render_template('modifier_oid.html', oid=oid, equipements=equipements)
+
+
+@app.route('/supprimer_oid/<int:id>')
+def supprimer_oid(id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM OID WHERE id=?", (id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('config'))
+
+
 # --------------------------------------------------------------------
 # 📜 Logs
 # --------------------------------------------------------------------
@@ -150,25 +258,11 @@ def logs():
     return render_template('logs.html')
 
 # --------------------------------------------------------------------
-# ⚙️ Configuration
-# --------------------------------------------------------------------
-@app.route('/config')
-def config():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT id, nom, ip, type, community, intervalle FROM Equipement;")
-    equipements = cur.fetchall()
-    conn.close()
-
-    return render_template('config.html', equipements=equipements)
-
-# --------------------------------------------------------------------
 # 👥 Administration
 # --------------------------------------------------------------------
 @app.route('/admin')
 def admin():
     return render_template('admin.html')
-
 
 # --------------------------------------------------------------------
 # 📡 Fonction SNMP
