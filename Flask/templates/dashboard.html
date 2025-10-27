@@ -4,20 +4,25 @@
 <h2 class="dashboard-title">Tableau de bord</h2>
 <p class="dashboard-subtitle">Bienvenue sur le tableau de bord de supervision.</p>
 
+<input type="text" id="filterDashboard" 
+       onkeyup="filterTable('dashboardTable', this.value)" 
+       placeholder="🔎 Rechercher un équipement ou paramètre..." 
+       style="margin-bottom: 15px; padding: 8px; width: 50%; border-radius: 6px; border: 1px solid #ccc;">
+
 {% if data %}
 <div class="table-container">
-    <table class="dashboard-table">
+    <table id="dashboardTable" class="dashboard-table">
         <thead>
             <tr>
-                <th>Équipement</th>
-                <th>Paramètre</th>
-                <th>Valeur</th>
-                <th>Horodatage</th>
+                <th onclick="sortTable(0)">Équipement ⬍</th>
+                <th onclick="sortTable(1)">Paramètre ⬍</th>
+                <th onclick="sortTable(2)">Valeur ⬍</th>
+                <th onclick="sortTable(3)">Horodatage ⬍</th>
             </tr>
         </thead>
         <tbody>
             {% for row in data %}
-            <tr>
+            <tr class="{% if loop.index > 20 %}extra-row hidden-row{% endif %}">
                 <td>{{ row['equipement'] }}</td>
                 <td>{{ row['parametre'] }}</td>
                 <td class="value-cell">{{ row['valeur'] }}</td>
@@ -27,6 +32,14 @@
         </tbody>
     </table>
 </div>
+
+{% if data|length > 20 %}
+    <button id="showMoreBtn" data-showing="false" onclick="toggleRows('dashboardTable','showMoreBtn')"
+        style="margin-top: 15px; background-color: #4A6785; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
+        Afficher plus
+    </button>
+{% endif %}
+
 {% else %}
 <p class="no-data">Aucune donnée disponible dans la base de données.</p>
 {% endif %}
@@ -40,7 +53,6 @@
 .dashboard-table {
     width: 85%;
     border-collapse: collapse;
-    table-layout: fixed; /* ✅ fixe les largeurs des colonnes */
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     background-color: #fff;
     border-radius: 8px;
@@ -50,7 +62,7 @@
 .dashboard-table th,
 .dashboard-table td {
     padding: 12px 15px;
-    text-align: center; /* ✅ centre le texte pour toutes les colonnes */
+    text-align: center;
     border-bottom: 1px solid #e0e0e0;
 }
 
@@ -58,6 +70,12 @@
     background-color: #1b2a4e;
     color: white;
     font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+}
+
+.dashboard-table th:hover {
+    background-color: #2e4372;
 }
 
 .dashboard-table tr:hover {
@@ -67,6 +85,10 @@
 .value-cell {
     font-weight: 600;
     color: #2a4d85;
+}
+
+.hidden-row {
+    display: none;
 }
 
 .dashboard-title {
@@ -90,4 +112,61 @@
     margin-top: 30px;
 }
 </style>
+
+<script>
+// 🔎 Filtrage
+function filterTable(tableId, searchText) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    const rows = table.getElementsByTagName("tr");
+    searchText = searchText.toLowerCase();
+
+    for (let i = 1; i < rows.length; i++) {
+        const cells = rows[i].getElementsByTagName("td");
+        let found = false;
+
+        for (let j = 0; j < cells.length; j++) {
+            if (cells[j].textContent.toLowerCase().includes(searchText)) {
+                found = true;
+                break;
+            }
+        }
+        rows[i].style.display = found ? "" : "none";
+    }
+}
+
+// 📊 Tri des colonnes
+function sortTable(columnIndex) {
+    const table = document.getElementById("dashboardTable");
+    const tbody = table.tBodies[0];
+    const rows = Array.from(tbody.rows);
+    const asc = table.dataset.sortOrder !== "asc";
+
+    rows.sort((a, b) => {
+        let x = a.cells[columnIndex].textContent.trim();
+        let y = b.cells[columnIndex].textContent.trim();
+
+        if (!isNaN(x) && !isNaN(y)) {
+            return asc ? x - y : y - x;
+        } else if (Date.parse(x) && Date.parse(y)) {
+            return asc ? new Date(x) - new Date(y) : new Date(y) - new Date(x);
+        } else {
+            return asc ? x.localeCompare(y) : y.localeCompare(x);
+        }
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+    table.dataset.sortOrder = asc ? "asc" : "desc";
+}
+
+// 👁️‍🗨️ Afficher / masquer les lignes supplémentaires
+function toggleRows(tableId, buttonId) {
+    const rows = document.querySelectorAll(`#${tableId} .extra-row`);
+    const button = document.getElementById(buttonId);
+    const showing = button.dataset.showing === "true";
+    rows.forEach(row => row.style.display = showing ? "none" : "table-row");
+    button.textContent = showing ? "Afficher plus" : "Afficher moins";
+    button.dataset.showing = !showing;
+}
+</script>
 {% endblock %}

@@ -395,7 +395,7 @@ async def poll_snmp_data():
 # 🚀 Lancement du serveur
 # --------------------------------------------------------------------
 def run_flask():
-    app.run(host="10.7.253.66", port=5000, debug=True, use_reloader=False)
+    app.run(host="10.7.253.74", port=5000, debug=True, use_reloader=False)
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
