@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Modifier un Équipement</title>
+    <style>
+        body {
+            background-color: #f7f9fc;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 26px;
+            color: #222;
+        }
+
+        form {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            width: 380px;
+            margin: 30px auto;
+            box-shadow: 0 0 12px rgba(0,0,0,0.1);
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            background-color: #4A6785;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        button:hover { background-color: #39536a; }
+
+        .back-btn {
+            background-color: #888;
+            margin-top: 10px;
+        }
+
+        .back-btn:hover {
+            background-color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>Modifier l'Équipement</h1>
+
+    <form method="POST">
+        <label for="nom">Nom</label>
+        <input type="text" id="nom" name="nom" value="{{ equipement['nom'] }}" required>
+
+        <label for="ip">Adresse IP</label>
+        <input type="text" id="ip" name="ip" value="{{ equipement['ip'] }}" required>
+
+        <label for="type">Type</label>
+        <input type="text" id="type" name="type" value="{{ equipement['type'] }}">
+
+        <label for="community">Community</label>
+        <input type="text" id="community" name="community" value="{{ equipement['community'] }}">
+
+        <label for="intervalle">Intervalle (s)</label>
+        <input type="number" id="intervalle" name="intervalle" value="{{ equipement['intervalle'] }}" required>
+
+        <button type="submit">💾 Enregistrer les modifications</button>
+        <button type="button" class="back-btn" onclick="window.location.href='/config'">↩️ Annuler</button>
+    </form>
+</body>
+</html>

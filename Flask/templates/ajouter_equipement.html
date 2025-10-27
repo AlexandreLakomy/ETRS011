@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Ajouter un Équipement - Outil de Supervision</title>
+    <style>
+        body {
+            background-color: #f7f9fc;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #222;
+            margin-bottom: 20px;
+        }
+
+        form {
+            background: white;
+            border-radius: 10px;
+            display: inline-block;
+            padding: 30px 50px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.15);
+        }
+
+        input {
+            display: block;
+            margin: 12px auto;
+            padding: 10px;
+            width: 260px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background-color: #4A6785;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 14px;
+        }
+
+        button:hover { background-color: #39536a; }
+
+        .back-btn {
+            background-color: #6c757d;
+        }
+
+        .back-btn:hover {
+            background-color: #5a6268;
+        }
+
+        .success {
+            color: green;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ajouter une Machine à Superviser</h1>
+
+    <form method="POST" action="/ajouter_equipement">
+        <input type="text" name="nom" placeholder="Nom" required>
+        <input type="text" name="ip" placeholder="Adresse IP" required>
+        <input type="text" name="type" placeholder="Type" required>
+        <input type="text" name="community" placeholder="Community" required>
+        <input type="number" name="intervalle" placeholder="Intervalle (sec)" required>
+        <div>
+            <button type="submit">💾 Ajouter un machine</button>
+            <button type="button" class="back-btn" onclick="window.location.href='/config'">↩️ Retour aux équipements</button>
+        </div>
+    </form>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Configuration - Outil de Supervision</title>
+    <style>
+        body {
+            background-color: #f7f9fc;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 40px;
+        }
+
+        h1, h2 {
+            color: #1b2a4e;
+        }
+
+        h1 { font-size: 28px; margin-bottom: 10px; }
+        h2 { font-size: 22px; margin-top: 50px; }
+
+        table {
+            margin: 30px auto;
+            border-collapse: collapse;
+            width: 90%;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 12px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            border: 1px solid #e0e0e0;
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #4A6785;
+            color: white;
+        }
+
+        tr:nth-child(even) { background-color: #f8f9fb; }
+
+        button {
+            background-color: #4A6785;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 14px;
+        }
+
+        button:hover { background-color: #39536a; }
+
+        .action-btn {
+            padding: 6px 12px;
+            font-size: 13px;
+            border-radius: 4px;
+        }
+
+        .edit-btn { background-color: #2E8B57; }
+        .edit-btn:hover { background-color: #206d45; }
+
+        .delete-btn { background-color: #c0392b; }
+        .delete-btn:hover { background-color: #992d22; }
+
+        .home-btn { background-color: #6c757d; }
+        .home-btn:hover { background-color: #5a6268; }
+
+        .no-data {
+            font-style: italic;
+            color: #777;
+            margin-top: 20px;
+        }
+
+        .hidden-row { display: none; }
+
+        .filter-input {
+            margin-top: 15px;
+            padding: 8px;
+            width: 50%;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+    </style>
+
+<script>
+let activeFilters = {}; // garde l’état du filtre actif par table
+
+// 🔎 Filtrage dynamique des tables
+function filterTable(tableId, searchValue) {
+    const table = document.getElementById(tableId);
+    const rows = table.getElementsByTagName("tr");
+    const text = searchValue.toLowerCase();
+    const buttonId = tableId === "tableOids" ? "showMoreOids" : "showMoreEquip";
+    const button = document.getElementById(buttonId);
+
+    const hasFilter = text.trim() !== "";
+    activeFilters[tableId] = hasFilter; // on retient si un filtre est actif
+
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const cells = row.getElementsByTagName("td");
+        let match = false;
+
+        for (let j = 0; j < cells.length; j++) {
+            if (cells[j].textContent.toLowerCase().includes(text)) {
+                match = true;
+                break;
+            }
+        }
+
+        // Si un filtre est actif → afficher uniquement les correspondances
+        if (hasFilter) {
+            row.style.display = match ? "table-row" : "none";
+        } else {
+            // Si aucun filtre → comportement normal
+            const showing = button && button.dataset.showing === "true";
+            if (row.classList.contains("extra-row")) {
+                row.style.display = showing ? "table-row" : "none";
+            } else {
+                row.style.display = "table-row";
+            }
+        }
+    }
+
+    // Met à jour le texte du bouton sans perturber l'état d'affichage
+    if (!hasFilter && button) {
+        button.textContent = button.dataset.showing === "true" ? "Afficher moins" : "Afficher plus";
+    }
+}
+
+// 🔁 Afficher / masquer les lignes supplémentaires
+function toggleRows(tableId, buttonId) {
+    const rows = document.querySelectorAll(`#${tableId} .extra-row`);
+    const button = document.getElementById(buttonId);
+    const showing = button.dataset.showing === "true";
+    const hasFilter = activeFilters[tableId] === true;
+
+    // Si un filtre est actif, on ne masque/affiche que les lignes visibles du filtre
+    if (hasFilter) {
+        rows.forEach(row => {
+            // “Afficher plus” → montrer uniquement les lignes filtrées déjà visibles
+            if (!showing && row.style.display !== "none") {
+                row.style.display = "table-row";
+            }
+            // “Afficher moins” → garder visibles seulement les 10 premières correspondances
+        });
+
+        // Pour “Afficher moins” pendant un filtre : ne pas vider le tableau
+        if (showing) {
+            let visibleCount = 0;
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (row.style.display !== "none") {
+                    visibleCount++;
+                    if (visibleCount > 10 && row.classList.contains("extra-row")) {
+                        row.style.display = "none";
+                    }
+                }
+            }
+        }
+    } else {
+        // Si pas de filtre → comportement normal
+        rows.forEach(row => row.style.display = showing ? "none" : "table-row");
+    }
+
+    // Mise à jour du bouton
+    button.textContent = showing ? "Afficher plus" : "Afficher moins";
+    button.dataset.showing = (!showing).toString();
+}
+</script>
+
+</head>
+<body>
+    <!-- 🔧 Équipements -->
+    <h1>Configuration des Équipements</h1>
+    <button class="home-btn" onclick="window.location.href='/'">🏠 Retour à l'accueil</button>
+    <button onclick="window.location.href='/ajouter_equipement'">➕ Ajouter un équipement</button>
+
+    <input type="text" class="filter-input" 
+           placeholder="🔍 Rechercher un équipement..." 
+           onkeyup="filterTable('equipement-table', this.value)">
+
+    {% if equipements %}
+        <table id="equipement-table">
+            <tr>
+                <th>ID</th>
+                <th>Nom</th>
+                <th>Adresse IP</th>
+                <th>Type</th>
+                <th>Community</th>
+                <th>Intervalle (s)</th>
+                <th>Actions</th>
+            </tr>
+            {% for eq in equipements %}
+            <tr class="{% if loop.index > 10 %}extra-row hidden-row{% endif %}">
+                <td>{{ eq.id }}</td>
+                <td>{{ eq.nom }}</td>
+                <td>{{ eq.ip }}</td>
+                <td>{{ eq.type }}</td>
+                <td>{{ eq.community }}</td>
+                <td>{{ eq.intervalle }}</td>
+                <td>
+                    <button class="action-btn edit-btn" onclick="window.location.href='/modifier_equipement/{{ eq.id }}'">✏️ Modifier</button>
+                    <button class="action-btn delete-btn" onclick="confirmDelete('{{ eq.id }}', '{{ eq.nom }}')">🗑️ Supprimer</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        {% if equipements|length > 10 %}
+            <button id="showMoreEquip" data-showing="false" onclick="toggleRows('equipement-table','showMoreEquip')">
+                Afficher plus
+            </button>
+        {% endif %}
+    {% else %}
+        <p class="no-data">Aucun équipement enregistré pour le moment.</p>
+    {% endif %}
+
+    <!-- 🔧 OIDs -->
+    <h2>Configuration des OIDs</h2>
+    <button class="home-btn" onclick="window.location.href='/'">🏠 Retour à l'accueil</button>
+    <button onclick="window.location.href='/ajouter_oid'">➕ Ajouter un OID</button>
+
+    <input type="text" class="filter-input" 
+           placeholder="🔍 Rechercher un OID ou un équipement associé..." 
+           onkeyup="filterTable('tableOids', this.value)">
+
+    {% if oids %}
+        <table id="tableOids">
+            <tr>
+                <th>ID</th>
+                <th>Nom du paramètre</th>
+                <th>Identifiant (OID)</th>
+                <th>Type</th>
+                <th>Équipement associé</th>
+                <th>Alerte active</th>
+                <th>Actions</th>
+            </tr>
+            {% for oid in oids %}
+            <tr class="{% if loop.index > 10 %}extra-row hidden-row{% endif %}">
+                <td>{{ oid.id }}</td>
+                <td>{{ oid.nomParametre }}</td>
+                <td>{{ oid.identifiant }}</td>
+                <td>{{ oid.typeValeur }}</td>
+                <td>{{ oid.equipement_nom or "Aucun" }}</td>
+                <td>
+                    <input type="checkbox" {% if oid.alerte_active == 1 %}checked{% endif %}
+                        onchange="toggleAlerte('{{ oid.id }}', this.checked)">
+                </td>
+                <td>
+                    <button class="action-btn edit-btn" onclick="window.location.href='/modifier_oid/{{ oid.id }}'">✏️ Modifier</button>
+                    <button class="action-btn delete-btn" onclick="confirmDeleteOID('{{ oid.id }}', '{{ oid.nomParametre }}')">🗑️ Supprimer</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        {% if oids|length > 10 %}
+            <button id="showMoreOids" data-showing="false" onclick="toggleRows('tableOids','showMoreOids')">
+                Afficher plus
+            </button>
+        {% endif %}
+    {% else %}
+        <p class="no-data">Aucun OID enregistré pour le moment.</p>
+    {% endif %}
+</body>
+</html>

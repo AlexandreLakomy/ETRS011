@@ -9,3 +9,8 @@ pip install pysnmp==4.4.12 pyasn1==0.4.8
 pip install flask
 pip install psycopg2
 python Flask/app.py
+
+
+py -3.11 -m venv .venv
+.\.venv\Scripts\activate
+python Flask/app.py

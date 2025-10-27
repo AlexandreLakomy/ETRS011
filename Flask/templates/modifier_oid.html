@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Modifier OID</title>
+</head>
+<body>
+    <h1>Modifier un OID</h1>
+
+    <form method="POST">
+        <label>Nom du paramètre :</label><br>
+        <input type="text" name="nomParametre" value="{{ oid.nomParametre }}" required><br><br>
+
+        <label>Identifiant (OID) :</label><br>
+        <input type="text" name="identifiant" value="{{ oid.identifiant }}" required><br><br>
+
+        <label>Type de valeur :</label><br>
+        <input type="text" name="typeValeur" value="{{ oid.typeValeur }}"><br><br>
+
+        <label>Équipement associé :</label><br>
+        <select name="equipement_id">
+            {% for eq in equipements %}
+            <option value="{{ eq.id }}" {% if eq.id == oid.equipement_id %}selected{% endif %}>{{ eq.nom }}</option>
+            {% endfor %}
+        </select><br><br>
+
+        <label>Seuil minimum :</label><br>
+        <input type="number" name="seuilMin" value="{{ oid.seuilMin or '' }}"><br><br>
+
+        <label>Seuil maximum :</label><br>
+        <input type="number" name="seuilMax" value="{{ oid.seuilMax or '' }}"><br><br>
+
+        <button type="submit">💾 Enregistrer</button>
+        <a href="{{ url_for('config') }}">↩️ Retour</a>
+    </form>
+</body>
+</html>
