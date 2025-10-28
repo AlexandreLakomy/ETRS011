@@ -114,7 +114,7 @@
 </style>
 
 <script>
-// 🔎 Filtrage
+// 🔎 Filtrage (corrigé pour compatibilité tri + afficher/moins)
 function filterTable(tableId, searchText) {
     const table = document.getElementById(tableId);
     if (!table) return;
@@ -131,7 +131,9 @@ function filterTable(tableId, searchText) {
                 break;
             }
         }
+
         rows[i].style.display = found ? "" : "none";
+        rows[i].dataset.filtered = found ? "false" : "true"; // 🔹 Important pour le respect du filtre
     }
 }
 
@@ -159,12 +161,19 @@ function sortTable(columnIndex) {
     table.dataset.sortOrder = asc ? "asc" : "desc";
 }
 
-// 👁️‍🗨️ Afficher / masquer les lignes supplémentaires
+// 👁️‍🗨️ Afficher / masquer les lignes supplémentaires (corrigé avec respect du filtre)
 function toggleRows(tableId, buttonId) {
-    const rows = document.querySelectorAll(`#${tableId} .extra-row`);
+    const table = document.getElementById(tableId);
+    const rows = table.querySelectorAll(".extra-row");
     const button = document.getElementById(buttonId);
     const showing = button.dataset.showing === "true";
-    rows.forEach(row => row.style.display = showing ? "none" : "table-row");
+
+    rows.forEach(row => {
+        if (row.dataset.filtered !== "true") {
+            row.style.display = showing ? "none" : "table-row";
+        }
+    });
+
     button.textContent = showing ? "Afficher plus" : "Afficher moins";
     button.dataset.showing = !showing;
 }

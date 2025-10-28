@@ -2,36 +2,97 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Modifier OID</title>
+    <title>Modifier un OID</title>
+    <style>
+        body {
+            background-color: #f7f9fc;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 26px;
+            color: #222;
+        }
+
+        form {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            width: 380px;
+            margin: 30px auto;
+            box-shadow: 0 0 12px rgba(0,0,0,0.1);
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            background-color: #4A6785;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        button:hover { background-color: #39536a; }
+
+        .back-btn {
+            background-color: #888;
+            margin-top: 10px;
+        }
+
+        .back-btn:hover {
+            background-color: #666;
+        }
+    </style>
 </head>
 <body>
     <h1>Modifier un OID</h1>
 
     <form method="POST">
-        <label>Nom du paramètre :</label><br>
-        <input type="text" name="nomParametre" value="{{ oid.nomParametre }}" required><br><br>
+        <label for="nomParametre">Nom du paramètre</label>
+        <input type="text" id="nomParametre" name="nomParametre" value="{{ oid.nomParametre }}" required>
 
-        <label>Identifiant (OID) :</label><br>
-        <input type="text" name="identifiant" value="{{ oid.identifiant }}" required><br><br>
+        <label for="identifiant">Identifiant (OID)</label>
+        <input type="text" id="identifiant" name="identifiant" value="{{ oid.identifiant }}" required>
 
-        <label>Type de valeur :</label><br>
-        <input type="text" name="typeValeur" value="{{ oid.typeValeur }}"><br><br>
+        <label for="typeValeur">Type de valeur</label>
+        <input type="text" id="typeValeur" name="typeValeur" value="{{ oid.typeValeur }}">
 
-        <label>Équipement associé :</label><br>
-        <select name="equipement_id">
+        <label for="equipement_id">Équipement associé</label>
+        <select id="equipement_id" name="equipement_id">
             {% for eq in equipements %}
             <option value="{{ eq.id }}" {% if eq.id == oid.equipement_id %}selected{% endif %}>{{ eq.nom }}</option>
             {% endfor %}
-        </select><br><br>
+        </select>
 
-        <label>Seuil minimum :</label><br>
-        <input type="number" name="seuilMin" value="{{ oid.seuilMin or '' }}"><br><br>
+        <label for="seuilMin">Seuil minimum</label>
+        <input type="number" step="any" id="seuilMin" name="seuilMin" value="{{ oid.seuilMin or '' }}">
 
-        <label>Seuil maximum :</label><br>
-        <input type="number" name="seuilMax" value="{{ oid.seuilMax or '' }}"><br><br>
+        <label for="seuilMax">Seuil maximum</label>
+        <input type="number" step="any" id="seuilMax" name="seuilMax" value="{{ oid.seuilMax or '' }}">
 
-        <button type="submit">💾 Enregistrer</button>
-        <a href="{{ url_for('config') }}">↩️ Retour</a>
+        <button type="submit">💾 Enregistrer les modifications</button>
+        <button type="button" class="back-btn" onclick="window.location.href='/config'">↩️ Annuler</button>
     </form>
 </body>
 </html>

@@ -171,6 +171,37 @@ function toggleRows(tableId, buttonId) {
     button.textContent = showing ? "Afficher plus" : "Afficher moins";
     button.dataset.showing = (!showing).toString();
 }
+
+
+document.addEventListener('DOMContentLoaded', () => {
+
+  document.querySelectorAll('.alert-toggle').forEach(checkbox => {
+    checkbox.addEventListener('change', async () => {
+      const oidId = checkbox.dataset.oidId;
+      const newState = checkbox.checked;
+
+      try {
+        const response = await fetch(`/update_alert/${oidId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ alerte_active: newState })
+        });
+        const result = await response.json();
+
+        if (result.success) {
+          console.log(`🔔 OID ${oidId} alerting = ${newState}`);
+        } else {
+          alert("Erreur lors de la mise à jour de l'alerte.");
+        }
+      } catch (error) {
+        console.error("Erreur réseau :", error);
+        alert("Impossible de contacter le serveur.");
+      }
+    });
+  });
+
+});
+
 </script>
 
 </head>
@@ -237,7 +268,7 @@ function toggleRows(tableId, buttonId) {
                 <th>Identifiant (OID)</th>
                 <th>Type</th>
                 <th>Équipement associé</th>
-                <th>Alerte active</th>
+                <th>Alerting</th>
                 <th>Actions</th>
             </tr>
             {% for oid in oids %}
@@ -248,8 +279,10 @@ function toggleRows(tableId, buttonId) {
                 <td>{{ oid.typeValeur }}</td>
                 <td>{{ oid.equipement_nom or "Aucun" }}</td>
                 <td>
-                    <input type="checkbox" {% if oid.alerte_active == 1 %}checked{% endif %}
-                        onchange="toggleAlerte('{{ oid.id }}', this.checked)">
+                <input type="checkbox"
+                        class="alert-toggle"
+                        data-oid-id="{{ oid.id }}"
+                        {% if oid.alerte_active == 1 %}checked{% endif %}>
                 </td>
                 <td>
                     <button class="action-btn edit-btn" onclick="window.location.href='/modifier_oid/{{ oid.id }}'">✏️ Modifier</button>
