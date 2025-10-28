@@ -1,7 +1,7 @@
 import signal
 import sys
 from urllib import request
-from flask import Flask, render_template, request, redirect, url_for # type: ignore
+from flask import Flask, render_template, request, redirect, url_for, jsonify # type: ignore
 from pysnmp.hlapi import getCmd, SnmpEngine, CommunityData, UdpTransportTarget, ContextData, ObjectType, ObjectIdentity # type: ignore
 import sqlite3
 import os
@@ -69,7 +69,7 @@ def dashboard():
     return render_template('dashboard.html', data=data)
 
 # --------------------------------------------------------------------
-# ⚙️ Configuration
+# ⚙️ Configurations
 # --------------------------------------------------------------------
 @app.route('/config')
 def config():
@@ -80,9 +80,15 @@ def config():
     cur.execute("SELECT id, nom, ip, type, community, intervalle FROM Equipement;")
     equipements = cur.fetchall()
 
-    # Récupération des OIDs
+    # Récupération des OIDs (⚙️ ajout de alerte_active)
     cur.execute("""
-        SELECT O.id, O.identifiant, O.nomParametre, O.typeValeur, E.nom AS equipement_nom
+        SELECT 
+            O.id, 
+            O.identifiant, 
+            O.nomParametre, 
+            O.typeValeur, 
+            O.alerte_active,
+            E.nom AS equipement_nom
         FROM OID O
         LEFT JOIN Equipement E ON O.equipement_id = E.id
         ORDER BY O.id ASC;
@@ -92,6 +98,22 @@ def config():
     conn.close()
     return render_template('config.html', equipements=equipements, oids=oids)
 
+
+# --------------------------------------------------------------------
+# ⚙️ Alerting Dynamique
+# --------------------------------------------------------------------
+@app.route('/update_alert/<int:oid_id>', methods=['POST'])
+def update_alert(oid_id):
+    data = request.get_json()
+    new_state = data.get('alerte_active', False)
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE OID SET alerte_active = ? WHERE id = ?", (1 if new_state else 0, oid_id))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"success": True, "oid_id": oid_id, "alerte_active": new_state})
 
 # --------------------------------------------------------------------
 #  Ajouter/Modifier/Supprimer un équipement
@@ -291,33 +313,51 @@ def check_snmp_device(ip, community, oid):
 
 
 # --------------------------------------------------------------------
-# 🛰️ Vérification SNMP (NAS + Switch)
+# 🛰️ Vérification SNMP
 # --------------------------------------------------------------------
 @app.route("/snmp_check")
 def snmp_check():
-    devices = [
-        {"name": "NAS", "ip": "192.168.176.2", "community": "passprojet", "equipement_id": 1, "oid_id": 1, "oid": "1.3.6.1.4.1.6574.1.2.0"},  # Température NAS
-        {"name": "Switch", "ip": "192.168.140.141", "community": "passprojet", "equipement_id": 2, "oid_id": 2, "oid": "1.3.6.1.4.1.9.2.1.58.0"}  # Température Cisco
-    ]
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # 🔍 Récupère uniquement les équipements qui ont des OIDs liés
+    cur.execute("""
+        SELECT 
+            E.id AS equipement_id,
+            E.nom AS equipement_nom,
+            E.ip,
+            E.community,
+            O.id AS oid_id,
+            O.identifiant AS oid,
+            O.nomParametre
+        FROM Equipement E
+        JOIN OID O ON E.id = O.equipement_id
+    """)
+
+    devices = cur.fetchall()
+    conn.close()
 
     results = []
 
     for device in devices:
-        res = check_snmp_device(device["ip"], device["community"])
+        res = check_snmp_device(device["ip"], device["community"], device["oid"])
+
         results.append({
-            "name": device["name"],
+            "name": device["equipement_nom"],
             "ip": device["ip"],
+            "oid": device["oid"],
+            "parametre": device["nomParametre"],
             "status": res["status"],
             "info": res["info"]
         })
 
-        # Si le device répond, on enregistre la valeur
+        # 💾 Enregistre la valeur si l'équipement répond
         if res["status"] == "UP":
             try:
-                valeur = float(res["info"].split("=")[-1].strip())  # extrait la valeur SNMP brute
+                valeur = float(res["info"].split("=")[-1].strip())
                 insert_snmp_value(device["equipement_id"], device["oid_id"], valeur)
             except Exception:
-                pass  # évite une erreur si la valeur n'est pas numérique
+                pass
 
     return render_template("snmp_check.html", results=results)
 
@@ -351,14 +391,18 @@ def collect_snmp_data():
         equipement_ip = equipement["ip"]
         community = equipement["community"]
 
-        # 2️⃣ Récupérer les OID associés à cet équipement
-        cur.execute("SELECT id, identifiant, nomParametre FROM OID WHERE equipement_id = ?", (equipement_id,))
+        # 2️⃣ Récupérer les OID associés à cet équipement (incluant alerte_active)
+        cur.execute("SELECT id, identifiant, nomParametre, alerte_active FROM OID WHERE equipement_id = ?", (equipement_id,))
         oids = cur.fetchall()
 
         for oid in oids:
             oid_id = oid["id"]
             oid_value = oid["identifiant"]
             param_name = oid["nomParametre"]
+
+            # ⛔ Ne rien faire si l’alerte est désactivée
+            if not oid["alerte_active"]:
+                continue
 
             # 3️⃣ Interroger le périphérique via SNMP
             res = check_snmp_device(equipement_ip, community, oid_value)
@@ -379,17 +423,65 @@ def collect_snmp_data():
     conn.close()
 
 
-async def poll_snmp_data():
-    """Tâche asynchrone qui interroge périodiquement les équipements SNMP."""
+async def poll_snmp_device(equipement):
+    """Tâche asynchrone individuelle pour chaque équipement."""
     while True:
-        print("⏳ Vérification SNMP automatique en cours...")
         try:
             with app.app_context():
-                collect_snmp_data()  # ⚡ collecte sans HTML
-        except Exception as e:
-            print(f"Erreur lors du polling SNMP : {e}")
-        await asyncio.sleep(60 - datetime.datetime.now().second % 60)
+                equipement_id = equipement["id"]
+                equipement_nom = equipement["nom"]
+                ip = equipement["ip"]
+                community = equipement["community"]
 
+                # 🔍 Récupérer les OID associés (incluant alerte_active)
+                conn = get_db_connection()
+                cur = conn.cursor()
+                cur.execute("SELECT id, identifiant, nomParametre, alerte_active FROM OID WHERE equipement_id = ?", (equipement_id,))
+                oids = cur.fetchall()
+                conn.close()
+
+                for oid in oids:
+                    # ⛔ Si l’alerte est désactivée → on passe
+                    if not oid["alerte_active"]:
+                        continue
+
+                    oid_id = oid["id"]
+                    oid_value = oid["identifiant"]
+                    param_name = oid["nomParametre"]
+
+                    res = check_snmp_device(ip, community, oid_value)
+
+                    if res["status"] == "UP":
+                        try:
+                            valeur_str = res["info"].split("=")[-1].strip()
+                            valeur = float(valeur_str)
+                            insert_snmp_value(equipement_id, oid_id, valeur)
+                            print(f"[{datetime.datetime.now():%Y-%m-%d %H:%M:%S}] ✅ {param_name} ({equipement_nom}) = {valeur}")
+                        except Exception as e:
+                            print(f"[{datetime.datetime.now():%Y-%m-%d %H:%M:%S}] ⚠️ Erreur d’insertion ({equipement_nom}): {e}")
+                    else:
+                        print(f"[{datetime.datetime.now():%Y-%m-%d %H:%M:%S}] ❌ {equipement_nom} injoignable : {res['info']}")
+
+        except Exception as e:
+            print(f"⚠️ Erreur sur {equipement['nom']} : {e}")
+
+        # 🕐 Attente selon l’intervalle défini pour cet équipement
+        await asyncio.sleep(equipement["intervalle"])
+
+
+async def poll_snmp_data():
+    """Lance une tâche asynchrone pour chaque équipement SNMP."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, nom, ip, community, intervalle FROM Equipement;")
+    equipements = cur.fetchall()
+    conn.close()
+
+    tasks = []
+    for equipement in equipements:
+        tasks.append(asyncio.create_task(poll_snmp_device(equipement)))
+
+    await asyncio.gather(*tasks)
 
 # --------------------------------------------------------------------
 # 🚀 Lancement du serveur
