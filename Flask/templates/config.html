@@ -1,21 +1,19 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
+{% extends 'base.html' %}
+{% block title %}Configuration{% endblock %}
+{% block content %}
+<div class="page-container">
     <meta charset="UTF-8">
     <title>Configuration - Outil de Supervision</title>
     <style>
-        body {
-            background-color: #f7f9fc;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 40px;
+        .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
         }
-
-        h1, h2 {
+        
+        h2 {
             color: #1b2a4e;
         }
 
-        h1 { font-size: 28px; margin-bottom: 10px; }
         h2 { font-size: 22px; margin-top: 50px; }
 
         table {
@@ -35,7 +33,7 @@
         }
 
         th {
-            background-color: #4A6785;
+            background-color: #1b2a4e;
             color: white;
         }
 
@@ -204,10 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </script>
 
-</head>
-<body>
-    <!-- 🔧 Équipements -->
-    <h1>Configuration des Équipements</h1>
+    <h2 class="dashboard-title">Configuration des Équipements</h2>
     <button class="home-btn" onclick="window.location.href='/'">🏠 Retour à l'accueil</button>
     <button onclick="window.location.href='/ajouter_equipement'">➕ Ajouter un équipement</button>
 
@@ -251,8 +246,9 @@ document.addEventListener('DOMContentLoaded', () => {
         <p class="no-data">Aucun équipement enregistré pour le moment.</p>
     {% endif %}
 
+    <br>
     <!-- 🔧 OIDs -->
-    <h2>Configuration des OIDs</h2>
+    <h2 class="dashboard-title">Configuration des OIDs</h2>
     <button class="home-btn" onclick="window.location.href='/'">🏠 Retour à l'accueil</button>
     <button onclick="window.location.href='/ajouter_oid'">➕ Ajouter un OID</button>
 
@@ -300,5 +296,5 @@ document.addEventListener('DOMContentLoaded', () => {
     {% else %}
         <p class="no-data">Aucun OID enregistré pour le moment.</p>
     {% endif %}
-</body>
-</html>
+    </div>
+{% endblock %}
