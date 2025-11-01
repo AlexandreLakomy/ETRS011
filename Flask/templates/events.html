@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% block title %}Événements{% endblock %}
+{% block content %}
+<h2 class="dashboard-title">Journal des Événements</h2>
+
+<input type="text" id="filterEvents" 
+       onkeyup="filterTable('eventsTable', this.value)" 
+       placeholder="🔎 Rechercher un événement ou un équipement..." 
+       style="margin-bottom: 15px; padding: 8px; width: 50%; border-radius: 6px; border: 1px solid #ccc;">
+
+{% if events %}
+
+<!-- 🔽 Liste déroulante de filtres -->
+<div style="text-align: center; margin-bottom: 15px; position: relative;">
+    <button id="dropdownBtn" class="dropdown-btn">Filtrer par niveau ⬇</button>
+    <div id="dropdownMenu" class="dropdown-menu">
+        <label><input type="checkbox" id="filterAll" checked> <strong>Tous</strong></label><br>
+        <label><input type="checkbox" class="level-filter" value="LOW" checked> Low</label><br>
+        <label><input type="checkbox" class="level-filter" value="WARNING" checked> Warning</label><br>
+        <label><input type="checkbox" class="level-filter" value="CRITICAL" checked> Critical</label>
+    </div>
+</div>
+
+<div class="table-container">
+    <table id="eventsTable" class="dashboard-table">
+        <thead>
+            <tr>
+                <th onclick="sortTable(0)">Paramètre ⬍</th>
+                <th onclick="sortTable(1)">Équipement ⬍</th>
+                <th onclick="sortTable(2)">Valeur actuelle ⬍</th>
+                <th onclick="sortTable(3)">Niveau ⬍</th>
+                <th onclick="sortTable(4)">Message ⬍</th>
+                <th onclick="sortTable(5)">Date / Heure ⬍</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in events %}
+            <tr class="{% if loop.index > 20 %}extra-row hidden-row{% endif %}">
+                <td>{{ e.nomParametre }}</td>
+                <td>{{ e.equipement_nom }}</td>
+                <td>{{ e.valeur_actuelle }}</td>
+                <td class="
+                    {% if e.niveau == 'LOW' %}seuil-min
+                    {% elif e.niveau == 'WARNING' %}seuil-warning
+                    {% elif e.niveau == 'CRITICAL' %}seuil-max
+                    {% endif %}
+                ">{{ e.niveau }}</td>
+                <td>{{ e.message }}</td>
+                <td>{{ e.horodatage }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if events|length > 20 %}
+    <button id="showMoreBtn" data-showing="false" onclick="toggleRows('eventsTable','showMoreBtn')"
+        style="margin-top: 15px; background-color: #4A6785; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
+        Afficher plus
+    </button>
+{% endif %}
+
+{% else %}
+<p class="no-data">Aucun événement enregistré pour le moment.</p>
+{% endif %}
+
+<style>
+/* Style du bouton déroulant */
+.dropdown-btn {
+    background-color: #1b2a4e;
+    color: white;
+    font-weight: 600;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.dropdown-btn:hover { background-color: #2e4372; }
+
+/* Menu déroulant */
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px 15px;
+    margin-top: 5px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    text-align: left;
+    z-index: 10;
+}
+.dropdown-menu label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+.dropdown-menu input[type="checkbox"] {
+    accent-color: #4467b8; /* 🔵 bleu moderne */
+    transform: scale(1.1);
+    cursor: pointer;
+}
+
+/* Autres styles du tableau (inchangés) */
+.table-container { display: flex; justify-content: center; }
+.dashboard-table { width: 90%; border-collapse: collapse; background-color: #fff; border-radius: 8px; overflow: hidden; }
+.dashboard-table th, .dashboard-table td { padding: 12px 15px; text-align: center; border: 1px solid #e0e0e0; }
+.dashboard-table th { background-color: #1b2a4e; color: white; font-weight: 600; cursor: pointer; }
+.dashboard-table tr:hover { background-color: #f5f7fa; }
+
+.seuil-min { background-color: rgba(52,152,219,0.1); color: #3498db; font-weight: 600; border-radius: 6px; padding: 3px 6px; }
+.seuil-warning { background-color: rgba(243,156,18,0.1); color: #e67e22; font-weight: 600; border-radius: 6px; padding: 3px 6px; }
+.seuil-max { background-color: rgba(231,76,60,0.1); color: #c0392b; font-weight: 600; border-radius: 6px; padding: 3px 6px; }
+.hidden-row { display: none; }
+.dashboard-title { text-align: center; font-size: 1.8em; font-weight: 700; margin-top: 20px; color: #1b2a4e; }
+.no-data { text-align: center; color: #888; margin-top: 30px; }
+</style>
+
+<script>
+function toggleRows(tableId, buttonId) {
+    const table = document.getElementById(tableId);
+    const rows = table.querySelectorAll(".extra-row");
+    const button = document.getElementById(buttonId);
+    const showing = button.dataset.showing === "true";
+
+    let anyVisible = false;
+
+    rows.forEach(row => {
+        // 🔹 Ne montre que les lignes non filtrées
+        if (row.dataset.filtered !== "true") {
+            row.style.display = showing ? "none" : "table-row";
+            if (!showing) anyVisible = true;
+        } else {
+            row.style.display = "none"; // garde caché si filtré
+        }
+    });
+
+    // 🔹 Change le texte du bouton selon l'état
+    button.textContent = (!showing && anyVisible) ? "Afficher moins" : "Afficher plus";
+    button.dataset.showing = (!showing && anyVisible) ? "true" : "false";
+}
+
+
+function filterTable(tableId, searchText) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    const rows = table.getElementsByTagName("tr");
+    searchText = searchText.toLowerCase();
+
+    for (let i = 1; i < rows.length; i++) {
+        const cells = rows[i].getElementsByTagName("td");
+        let found = false;
+        for (let j = 0; j < cells.length; j++) {
+            if (cells[j].textContent.toLowerCase().includes(searchText)) {
+                found = true;
+                break;
+            }
+        }
+        rows[i].style.display = found ? "" : "none";
+        rows[i].dataset.filtered = found ? "false" : "true";
+    }
+}
+
+function filterByCheckedLevels(tableId) {
+    const checkedLevels = Array.from(document.querySelectorAll('.level-filter:checked')).map(cb => cb.value);
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    const rows = table.getElementsByTagName("tr");
+
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const cells = row.getElementsByTagName("td");
+        const text = Array.from(cells).map(td => td.textContent.trim().toUpperCase());
+        const levelCell = text.find(t => ["LOW", "WARNING", "CRITICAL"].includes(t));
+
+        if (levelCell) {
+            const match = checkedLevels.includes(levelCell);
+            row.style.display = match ? "table-row" : "none";
+            row.dataset.filtered = match ? "false" : "true";
+        } else {
+            row.style.display = "none";
+            row.dataset.filtered = "true";
+        }
+
+        // 🔹 Si filtrée, retire la classe hidden-row (pour tout afficher sans bouton)
+        if (row.dataset.filtered === "false") {
+            row.classList.remove("hidden-row");
+        }
+    }
+
+    // 🔹 On remet le bouton "Afficher plus" à l’état initial
+    const button = document.getElementById("showMoreBtn");
+    if (button) {
+        button.textContent = "Afficher plus";
+        button.dataset.showing = "false";
+    }
+}
+
+function sortTable(columnIndex) {
+    const table = document.getElementById("eventsTable");
+    const tbody = table.tBodies[0];
+    const rows = Array.from(tbody.rows).filter(r => r.style.display !== "none");
+    const asc = table.dataset.sortOrder !== "asc";
+
+    rows.sort((a, b) => {
+        let x = a.cells[columnIndex].textContent.trim();
+        let y = b.cells[columnIndex].textContent.trim();
+
+        // Essai de tri numérique
+        if (!isNaN(x) && !isNaN(y)) return asc ? x - y : y - x;
+        // Essai de tri de dates
+        else if (Date.parse(x) && Date.parse(y)) return asc ? new Date(x) - new Date(y) : new Date(y) - new Date(x);
+        // Sinon tri alphabétique
+        else return asc ? x.localeCompare(y) : y.localeCompare(x);
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+    table.dataset.sortOrder = asc ? "asc" : "desc";
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const dropdownBtn = document.getElementById('dropdownBtn');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    const checkboxes = document.querySelectorAll('.level-filter');
+    const allBox = document.getElementById('filterAll');
+
+    dropdownBtn.addEventListener('click', () => {
+        dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+            dropdownMenu.style.display = 'none';
+        }
+    });
+
+    allBox.addEventListener('change', () => {
+        checkboxes.forEach(cb => cb.checked = allBox.checked);
+        filterByCheckedLevels('eventsTable');
+    });
+
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            allBox.checked = allChecked;
+            filterByCheckedLevels('eventsTable');
+        });
+    });
+});
+</script>
+{% endblock %}

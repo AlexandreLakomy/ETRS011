@@ -18,44 +18,41 @@
         }
 
         form {
-            background: white;
+            background-color: #ffffff;
             border-radius: 10px;
-            display: inline-block;
-            padding: 30px 50px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.15);
+            padding: 30px 35px; /* ✅ Réduction du padding horizontal */
+            width: 380px; /* ✅ Légèrement réduit */
+            margin: 0 auto;
+            box-shadow: 0 0 12px rgba(0,0,0,0.1);
+            text-align: left;
         }
 
         label {
             display: block;
-            text-align: left;
-            margin-top: 15px;
+            margin-top: 12px;
             font-weight: bold;
             color: #333;
         }
 
-        input, select {
-            display: block;
-            margin: 10px 0 15px 0;
+        input[type="text"], input[type="number"], select {
+            width: 100%;
             padding: 10px;
-            width: 260px;
-            border-radius: 6px;
             border: 1px solid #ccc;
-        }
-
-        input[type="checkbox"] {
-            width: auto;
-            margin-right: 8px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
         }
 
         button {
+            width: 100%;
             background-color: #4A6785;
             color: white;
             border: none;
-            padding: 10px 25px;
+            padding: 10px;
             border-radius: 6px;
             cursor: pointer;
-            margin: 10px;
-            font-size: 14px;
+            font-size: 15px;
+            margin-top: 10px;
         }
 
         button:hover { background-color: #39536a; }
@@ -68,10 +65,16 @@
             background-color: #5a6268;
         }
 
-        .success {
-            color: green;
-            font-weight: bold;
-            margin-bottom: 15px;
+        .thresholds {
+            margin-top: 20px;
+            padding: 12px;
+            background-color: #f1f4f8;
+            border-radius: 8px;
+        }
+
+        .thresholds h3 {
+            color: #1b2a4e;
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -99,15 +102,22 @@
             {% endfor %}
         </select>
 
-        <label>Seuil minimum :</label>
-        <input type="number" name="seuilMin">
+        <div class="thresholds">
+            <h3>⚙️ Seuils d’alerte</h3>
 
-        <label>Seuil maximum :</label>
-        <input type="number" name="seuilMax">
+            <label>Seuil minimum :</label>
+            <input type="number" name="seuilMin" step="any">
+
+            <label>Seuil warning :</label>
+            <input type="number" name="seuilWarning" step="any">
+
+            <label>Seuil maximum :</label>
+            <input type="number" name="seuilMax" step="any">
+        </div>
 
         <div>
             <button type="submit">💾 Enregistrer</button>
-            <button type="button" class="back-btn" onclick="window.location.href='/config'">↩️ Retour à la configuration</button>
+            <button type="button" class="back-btn" onclick="window.location.href='/config'">↩️ Retour</button>
         </div>
     </form>
 </body>

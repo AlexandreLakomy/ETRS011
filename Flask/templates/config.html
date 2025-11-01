@@ -5,21 +5,16 @@
     <meta charset="UTF-8">
     <title>Configuration - Outil de Supervision</title>
     <style>
-        .page-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        h2 {
+        .dashboard-title {
             color: #1b2a4e;
+            text-align: center;
+            margin-top: 40px;
         }
-
-        h2 { font-size: 22px; margin-top: 50px; }
 
         table {
             margin: 30px auto;
             border-collapse: collapse;
-            width: 90%;
+            width: 95%;
             background: white;
             border-radius: 8px;
             overflow: hidden;
@@ -28,32 +23,42 @@
 
         th, td {
             border: 1px solid #e0e0e0;
-            padding: 12px;
+            padding: 10px;
             text-align: center;
         }
 
         th {
             background-color: #1b2a4e;
             color: white;
+            font-weight: 600;
         }
 
         tr:nth-child(even) { background-color: #f8f9fb; }
+
+        .filter-input {
+            display: block;
+            margin: 15px auto;
+            padding: 8px;
+            width: 50%;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
 
         button {
             background-color: #4A6785;
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 8px 15px;
             border-radius: 6px;
             cursor: pointer;
-            margin: 10px;
             font-size: 14px;
+            margin: 10px;
         }
 
         button:hover { background-color: #39536a; }
 
         .action-btn {
-            padding: 6px 12px;
+            padding: 5px 10px;
             font-size: 13px;
             border-radius: 4px;
         }
@@ -68,20 +73,52 @@
         .home-btn:hover { background-color: #5a6268; }
 
         .no-data {
+            text-align: center;
             font-style: italic;
             color: #777;
             margin-top: 20px;
         }
-
-        .hidden-row { display: none; }
-
-        .filter-input {
-            margin-top: 15px;
-            padding: 8px;
-            width: 50%;
-            border-radius: 6px;
-            border: 1px solid #ccc;
+        .seuil-min {
+            color: #1b2a4e; /* texte normal foncé */
+            background-color: rgba(52, 152, 219, 0.1); /* vert pâle */
+            font-weight: 500;
+            padding: 3px 6px;
         }
+
+        .seuil-warning {
+            color: #1b2a4e;
+            background-color: rgba(243, 156, 18, 0.1); /* orange pâle */
+            font-weight: 500;
+            padding: 3px 6px;
+        }
+
+        .seuil-max {
+            color: #1b2a4e;
+            background-color: rgba(231, 76, 60, 0.1); /* rouge pâle */
+            font-weight: 500;
+            padding: 3px 6px;
+        }
+        .alert-toggle {
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            border: 2px solid #ccc;
+            background-color: #f8f9fb;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .alert-toggle:checked {
+            background-color: #2ecc71; /* Vert ON */
+            border-color: #27ae60;
+        }
+
+        .alert-toggle:not(:checked) {
+            background-color: #e74c3c; /* Rouge OFF */
+            border-color: #c0392b;
+        }
+
     </style>
 
 <script>
@@ -264,6 +301,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <th>Identifiant (OID)</th>
                 <th>Type</th>
                 <th>Équipement associé</th>
+                <th>Seuil Min</th>
+                <th>Seuil Warning</th>
+                <th>Seuil Max</th>
                 <th>Alerting</th>
                 <th>Actions</th>
             </tr>
@@ -274,11 +314,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>{{ oid.identifiant }}</td>
                 <td>{{ oid.typeValeur }}</td>
                 <td>{{ oid.equipement_nom or "Aucun" }}</td>
+                <td class="seuil-min">{{ oid['seuilMin'] if oid['seuilMin'] is not none else '-' }}</td>
+                <td class="seuil-warning">{{ oid['seuilWarning'] if oid['seuilWarning'] is not none else '-' }}</td>
+                <td class="seuil-max">{{ oid['seuilMax'] if oid['seuilMax'] is not none else '-' }}</td>
                 <td>
-                <input type="checkbox"
-                        class="alert-toggle"
-                        data-oid-id="{{ oid.id }}"
-                        {% if oid.alerte_active == 1 %}checked{% endif %}>
+                    <input type="checkbox"
+                           class="alert-toggle"
+                           data-oid-id="{{ oid.id }}"
+                           {% if oid.alerte_active == 1 %}checked{% endif %}>
                 </td>
                 <td>
                     <button class="action-btn edit-btn" onclick="window.location.href='/modifier_oid/{{ oid.id }}'">✏️ Modifier</button>

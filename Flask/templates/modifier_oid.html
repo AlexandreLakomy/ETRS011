@@ -12,25 +12,26 @@
         }
 
         h1 {
-            font-size: 26px;
+            font-size: 28px;
             color: #222;
+            margin-bottom: 20px;
         }
 
         form {
             background-color: #ffffff;
             border-radius: 10px;
-            padding: 30px;
-            width: 380px;
-            margin: 30px auto;
+            padding: 30px 35px; /* ✅ Réduction du padding horizontal */
+            width: 380px; /* ✅ Légèrement réduit */
+            margin: 0 auto;
             box-shadow: 0 0 12px rgba(0,0,0,0.1);
             text-align: left;
         }
 
         label {
             display: block;
-            margin: 10px 0 5px;
-            color: #333;
+            margin-top: 12px;
             font-weight: bold;
+            color: #333;
         }
 
         input[type="text"], input[type="number"], select {
@@ -38,11 +39,11 @@
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 6px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
         }
 
         button {
-            display: block;
             width: 100%;
             background-color: #4A6785;
             color: white;
@@ -51,17 +52,29 @@
             border-radius: 6px;
             cursor: pointer;
             font-size: 15px;
+            margin-top: 10px;
         }
 
         button:hover { background-color: #39536a; }
 
         .back-btn {
-            background-color: #888;
-            margin-top: 10px;
+            background-color: #6c757d;
         }
 
         .back-btn:hover {
-            background-color: #666;
+            background-color: #5a6268;
+        }
+
+        .thresholds {
+            margin-top: 20px;
+            padding: 12px;
+            background-color: #f1f4f8;
+            border-radius: 8px;
+        }
+
+        .thresholds h3 {
+            color: #1b2a4e;
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -85,11 +98,18 @@
             {% endfor %}
         </select>
 
-        <label for="seuilMin">Seuil minimum</label>
-        <input type="number" step="any" id="seuilMin" name="seuilMin" value="{{ oid.seuilMin or '' }}">
+        <div class="thresholds">
+            <h3>⚙️ Seuils d’alerte</h3>
 
-        <label for="seuilMax">Seuil maximum</label>
-        <input type="number" step="any" id="seuilMax" name="seuilMax" value="{{ oid.seuilMax or '' }}">
+            <label for="seuilMin">Seuil minimum</label>
+            <input type="number" step="any" id="seuilMin" name="seuilMin" value="{{ oid.seuilMin or '' }}">
+
+            <label for="seuilWarning">Seuil warning</label>
+            <input type="number" step="any" id="seuilWarning" name="seuilWarning" value="{{ oid.seuilWarning or '' }}">
+
+            <label for="seuilMax">Seuil maximum</label>
+            <input type="number" step="any" id="seuilMax" name="seuilMax" value="{{ oid.seuilMax or '' }}">
+        </div>
 
         <button type="submit">💾 Enregistrer les modifications</button>
         <button type="button" class="back-btn" onclick="window.location.href='/config'">↩️ Annuler</button>

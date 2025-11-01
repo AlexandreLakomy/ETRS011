@@ -1,7 +1,7 @@
 import signal
 import sys
 from urllib import request
-from flask import Flask, render_template, request, redirect, url_for, jsonify # type: ignore
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session # type: ignore
 from pysnmp.hlapi import getCmd, SnmpEngine, CommunityData, UdpTransportTarget, ContextData, ObjectType, ObjectIdentity # type: ignore
 import sqlite3
 import os
@@ -76,17 +76,20 @@ def config():
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # Récupération des équipements
+    # 🔹 Récupération des équipements
     cur.execute("SELECT id, nom, ip, type, community, intervalle FROM Equipement;")
     equipements = cur.fetchall()
 
-    # Récupération des OIDs (⚙️ ajout de alerte_active)
+    # 🔹 Récupération des OIDs avec les seuils + alerte_active
     cur.execute("""
         SELECT 
             O.id, 
             O.identifiant, 
             O.nomParametre, 
             O.typeValeur, 
+            O.seuilMin, 
+            O.seuilWarning, 
+            O.seuilMax, 
             O.alerte_active,
             E.nom AS equipement_nom
         FROM OID O
@@ -97,7 +100,6 @@ def config():
 
     conn.close()
     return render_template('config.html', equipements=equipements, oids=oids)
-
 
 # --------------------------------------------------------------------
 # ⚙️ Alerting Dynamique
@@ -193,7 +195,8 @@ def oids():
     cur = conn.cursor()
     cur.execute("""
         SELECT O.id, O.identifiant, O.nomParametre, O.typeValeur, 
-               O.seuilMin, O.seuilMax, O.alerte_active, E.nom AS equipement_nom
+               O.seuilMin, O.seuilWarning, O.seuilMax, O.alerte_active, 
+               E.nom AS equipement_nom
         FROM OID O
         LEFT JOIN Equipement E ON O.equipement_id = E.id
     """)
@@ -215,13 +218,16 @@ def ajouter_oid():
         type_valeur = request.form['typeValeur']
         equipement_id = request.form['equipement_id']
         seuil_min = request.form['seuilMin'] or None
+        seuil_warning = request.form['seuilWarning'] or None  # ✅ ajouté
         seuil_max = request.form['seuilMax'] or None
         alerte_active = 1 if 'alerte_active' in request.form else 0
 
         cur.execute("""
-            INSERT INTO OID (identifiant, nomParametre, typeValeur, equipement_id, seuilMin, seuilMax, alerte_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (identifiant, nom_parametre, type_valeur, equipement_id, seuil_min, seuil_max, alerte_active))
+            INSERT INTO OID (identifiant, nomParametre, typeValeur, equipement_id, 
+                             seuilMin, seuilWarning, seuilMax, alerte_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (identifiant, nom_parametre, type_valeur, equipement_id,
+              seuil_min, seuil_warning, seuil_max, alerte_active))
         conn.commit()
         conn.close()
         return redirect(url_for('config'))
@@ -241,14 +247,17 @@ def modifier_oid(id):
         type_valeur = request.form['typeValeur']
         equipement_id = request.form['equipement_id']
         seuil_min = request.form['seuilMin'] or None
+        seuil_warning = request.form['seuilWarning'] or None  # ✅ ajouté
         seuil_max = request.form['seuilMax'] or None
         alerte_active = 1 if 'alerte_active' in request.form else 0
 
         cur.execute("""
             UPDATE OID
-            SET identifiant=?, nomParametre=?, typeValeur=?, equipement_id=?, seuilMin=?, seuilMax=?, alerte_active=?
+            SET identifiant=?, nomParametre=?, typeValeur=?, equipement_id=?, 
+                seuilMin=?, seuilWarning=?, seuilMax=?, alerte_active=?
             WHERE id=?
-        """, (identifiant, nom_parametre, type_valeur, equipement_id, seuil_min, seuil_max, alerte_active, id))
+        """, (identifiant, nom_parametre, type_valeur, equipement_id,
+              seuil_min, seuil_warning, seuil_max, alerte_active, id))
         conn.commit()
         conn.close()
         return redirect(url_for('config'))
@@ -273,11 +282,131 @@ def supprimer_oid(id):
 
 
 # --------------------------------------------------------------------
-# 📜 Logs
+#  ⚠️ Seuil
 # --------------------------------------------------------------------
-@app.route('/logs')
-def logs():
-    return render_template('logs.html')
+def verifier_seuils(oid_id, equipement_id, valeur_actuelle):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT seuilMin, seuilWarning, seuilMax FROM OID WHERE id=?", (oid_id,))
+    seuils = cur.fetchone()
+
+    if not seuils:
+        conn.close()
+        return
+
+    seuil_min, seuil_warning, seuil_max = seuils
+    type_alerte, seuil_declencheur, niveau = None, None, None
+
+    try:
+        valeur_actuelle = float(valeur_actuelle)
+        if seuil_min is not None:
+            seuil_min = float(seuil_min)
+        if seuil_warning is not None:
+            seuil_warning = float(seuil_warning)
+        if seuil_max is not None:
+            seuil_max = float(seuil_max)
+    except Exception as e:
+        print(f"⚠️ Erreur de conversion numérique : {e}")
+        conn.close()
+        return
+
+    # 🔥 Seuil critique — priorité absolue
+    if seuil_max is not None and valeur_actuelle > seuil_max:
+        type_alerte = "SeuilMax"
+        seuil_declencheur = seuil_max
+        niveau = "CRITICAL"
+
+    # ⚠️ Seuil warning
+    elif seuil_warning is not None and valeur_actuelle > seuil_warning:
+        type_alerte = "SeuilWarning"
+        seuil_declencheur = seuil_warning
+        niveau = "WARNING"
+
+    # 🔽 Seuil minimal
+    elif seuil_min is not None and valeur_actuelle < seuil_min:
+        type_alerte = "SeuilMin"
+        seuil_declencheur = seuil_min
+        niveau = "LOW"
+
+
+    if type_alerte:
+        message = f"Alerte {niveau} : valeur {valeur_actuelle} dépasse {seuil_declencheur}"
+        cur.execute("""
+            INSERT INTO Event (oid_id, equipement_id, type_alerte, valeur_actuelle, seuil_declencheur, message, niveau)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (oid_id, equipement_id, type_alerte, valeur_actuelle, seuil_declencheur, message, niveau))
+        conn.commit()
+        print(f"🚨 Alerte générée : {message}")  # 👈 Ajout pour debug
+
+    conn.close()
+
+
+# --------------------------------------------------------------------
+# 📜 Event
+# --------------------------------------------------------------------
+@app.route('/events')
+def events():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT 
+            E.id,
+            O.nomParametre,
+            Q.nom AS equipement_nom,
+            E.type_alerte,
+            E.valeur_actuelle,
+            E.seuil_declencheur,
+            E.message,
+            E.niveau,
+            E.horodatage
+        FROM Event E
+        LEFT JOIN OID O ON E.oid_id = O.id
+        LEFT JOIN Equipement Q ON E.equipement_id = Q.id
+        ORDER BY E.horodatage DESC;
+    """)
+    events = cur.fetchall()
+    conn.close()
+    return render_template('events.html', events=events)
+
+
+# --------------------------------------------------------------------
+# Enregistrement
+# --------------------------------------------------------------------
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        # TODO: traiter le formulaire d'inscription (validation, insertion en BDD, etc.)
+        # Pour l'instant, rediriger vers la page de connexion après POST
+        return render_template('register.html')
+
+# --------------------------------------------------------------------
+# Connexion / Déconnexion
+# --------------------------------------------------------------------
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        # Vérif utilisateur + mot de passe
+        # Stocker dans session
+        # Rediriger selon rôle
+        return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('index'))
+
+# --------------------------------------------------------------------
+# Protection des routes
+# --------------------------------------------------------------------
+from functools import wraps
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 # --------------------------------------------------------------------
 # 👥 Administration
@@ -412,7 +541,12 @@ def collect_snmp_data():
                     valeur_str = res["info"].split("=")[-1].strip()
                     valeur = float(valeur_str)
                     insert_snmp_value(equipement_id, oid_id, valeur)
+
                     print(f"[{datetime.datetime.now():%Y-%m-%d %H:%M:%S}] ✅ {param_name} ({equipement_nom}) = {valeur}")
+
+                    # 🔔 Vérifie les seuils après récupération de la valeur
+                    verifier_seuils(oid_id, equipement_id, valeur)
+
                 except ValueError:
                     print(f"[{datetime.datetime.now():%Y-%m-%d %H:%M:%S}] ⚠️ Valeur non numérique reçue pour {param_name} ({equipement_nom}) : {res['info']}")
                 except Exception as e:
@@ -457,6 +591,7 @@ async def poll_snmp_device(equipement):
                             valeur = float(valeur_str)
                             insert_snmp_value(equipement_id, oid_id, valeur)
                             print(f"[{datetime.datetime.now():%Y-%m-%d %H:%M:%S}] ✅ {param_name} ({equipement_nom}) = {valeur}")
+                            verifier_seuils(oid_id, equipement_id, valeur)
                         except Exception as e:
                             print(f"[{datetime.datetime.now():%Y-%m-%d %H:%M:%S}] ⚠️ Erreur d’insertion ({equipement_nom}): {e}")
                     else:
@@ -487,7 +622,7 @@ async def poll_snmp_data():
 # 🚀 Lancement du serveur
 # --------------------------------------------------------------------
 def run_flask():
-    app.run(host="10.7.253.120", port=5000, debug=True, use_reloader=False)
+    app.run(host="10.7.253.152", port=5000, debug=True, use_reloader=False)
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
