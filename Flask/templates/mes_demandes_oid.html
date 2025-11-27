@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Mes demandes{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>📨 Mes demandes d’OID</h1>
+    <p>Voici l’historique de toutes vos demandes d’ajout d’OID.</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Type de demande</th>
+                <th>Détails</th>
+                <th>Date</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+
+        <tbody>
+        {% for d in demandes %}
+            <tr>
+                <!-- TYPE DE DEMANDE -->
+                <td>
+                    {% if d.action_type == "NEW_OID" %}
+                        ➕ Ajout d’OID
+                    {% elif d.action_type == "DELETE_OID" %}
+                        ❌ Suppression d’OID
+                    {% elif d.action_type == "DELETE_EQ" %}
+                        🖥️ Suppression équipement
+                    {% elif d.action_type == "NEW_TEMPLATE" %}
+                        📘 Nouvelle template
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
+                <!-- DÉTAILS -->
+                <td>
+                    {% if d.action_type == "NEW_OID" %}
+                        <strong>{{ d.oid_nom }}</strong> — {{ d.oid_identifiant }}
+                    {% elif d.action_type == "DELETE_OID" %}
+                        <strong>{{ d.oid_nom_delete }}</strong> — {{ d.oid_identifiant_delete }}
+                    {% elif d.action_type == "DELETE_EQ" %}
+                        <strong>{{ d.equipement_nom }}</strong> — {{ d.equipement_ip }}
+                    {% elif d.action_type == "NEW_TEMPLATE" %}
+                        <strong>{{ d.template_nom }}</strong>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
+                <!-- DATE -->
+                <td>{{ d.demande_date }}</td>
+
+                <!-- STATUT -->
+                <td>
+                    {% if d.validation_status == "PENDING" %}
+                        <span class="badge pending">⏳ En attente</span>
+                    {% elif d.validation_status == "APPROVED" %}
+                        <span class="badge approved">✔ Accepté</span>
+                    {% elif d.validation_status == "REJECTED" %}
+                        <span class="badge rejected">✘ Refusé</span>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+
+    </table>
+
+
+    <a href="{{ url_for('ajouter_oid') }}" class="btn">↩️ Retour</a>
+</div>
+
+<style>
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    background: #fff;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+th {
+    background-color: #1f3b73;
+    color: white;
+    padding: 10px;
+}
+td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.badge {
+    display: inline-block;
+    min-width: 110px;        /* garantit la même taille visuelle */
+    text-align: center;
+    padding: 8px 12px;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+}
+.badge.pending { background: #e89b00; }     /* orange plus saturé */
+.badge.approved { background: #1e9b32; }    /* vert modernisé */
+.badge.rejected { background: #c02323; }    /* rouge plus net */
+
+.no-data {
+    text-align: center;
+    color: #777;
+    padding: 15px;
+}
+
+.btn {
+    display: inline-block;
+    margin-top: 20px;
+    background-color: #4A6785;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 6px;
+    text-decoration: none;
+}
+.btn:hover {
+    background-color: #39536a;
+}
+</style>
+{% endblock %}

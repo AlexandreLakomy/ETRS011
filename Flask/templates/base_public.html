@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Supervision Réseau{% endblock %}</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Roboto, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            color: #1f3b73;
+        }
+        header {
+            background-color: #1f3b73;
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+        footer {
+            background-color: #1f3b73;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        Outil de Supervision Réseau
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        © 2025 - Projet de Supervision SNMP | IUT Réseaux & Télécoms
+    </footer>
+</body>
+</html>

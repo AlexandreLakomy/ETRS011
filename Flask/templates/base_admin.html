@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Administration - Supervision SNMP{% endblock %}</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Roboto, sans-serif;
+            background-color: #f4f7fc;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 🧭 Barre latérale */
+        nav {
+            width: 240px;
+            background-color: #1f3b73;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        nav h2 {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: block;
+            transition: background 0.2s;
+        }
+
+        nav a:hover {
+            background-color: #2f5296;
+        }
+
+        .active {
+            background-color: #314e88;
+        }
+
+        /* 📄 Contenu principal */
+        main {
+            flex-grow: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        footer {
+            background-color: #1f3b73;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            position: fixed;
+            bottom: 0;
+            width: calc(100% - 240px);
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav>
+        <h2>👨‍💻 Admin Panel</h2>
+        <a href="{{ url_for('admin_dashboard') }}" class="{% if request.endpoint == 'admin_dashboard' %}active{% endif %}">📊 Tableau de bord</a>
+        <a href="{{ url_for('logout') }}">🚪 Déconnexion</a>
+    </nav>
+
+    <!-- Contenu principal -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        © 2025 - Administration SNMP | IUT Réseaux & Télécoms
+    </footer>
+
+</body>
+</html>

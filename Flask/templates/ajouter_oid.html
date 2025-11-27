@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Ajouter un OID - Outil de Supervision</title>
+    <title>Associer un OID - Outil de Supervision</title>
     <style>
         body {
             background-color: #f7f9fc;
@@ -20,8 +20,8 @@
         form {
             background-color: #ffffff;
             border-radius: 10px;
-            padding: 30px 35px; /* ✅ Réduction du padding horizontal */
-            width: 380px; /* ✅ Légèrement réduit */
+            padding: 30px 35px;
+            width: 380px;
             margin: 0 auto;
             box-shadow: 0 0 12px rgba(0,0,0,0.1);
             text-align: left;
@@ -34,7 +34,7 @@
             color: #333;
         }
 
-        input[type="text"], input[type="number"], select {
+        input[type="number"], select {
             width: 100%;
             padding: 10px;
             border: 1px solid #ccc;
@@ -76,29 +76,129 @@
             color: #1b2a4e;
             margin-bottom: 10px;
         }
+
+        .oid-link {
+            display: inline-block;
+            margin-top: 6px;
+            color: #4A6785;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .oid-link:hover {
+            color: white;
+            background-color: #4A6785;
+            border-radius: 5px;
+            padding: 3px 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        select option {
+            font-family: monospace;
+        }
+
+        .btn-main {
+            width: 100%;
+            background-color: #4A6785;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: 0.2s;
+        }
+
+        .btn-main:hover {
+            background-color: #39536a;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .oid-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-start; /* ou center si tu veux les centrer */
+            margin: 10px 0 20px 0;
+        }
+
+        .oid-mini-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background-color: #e8eef5;
+            color: #2c4a73;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+            transition: 0.2s ease-in-out;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            white-space: nowrap; /* empêche un retour à la ligne dans le bouton */
+        }
+
+        .oid-mini-btn:hover {
+            background-color: #4A6785;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+
+
     </style>
 </head>
 <body>
-    <h1>Ajouter un OID</h1>
+    <h1>Associer un OID</h1>
 
     {% if success %}
         <p class="success">✅ L’OID a bien été ajouté !</p>
     {% endif %}
 
     <form method="POST" action="/ajouter_oid">
-        <label>Nom du paramètre :</label>
-        <input type="text" name="nomParametre" required>
+
+    <div class="oid-actions">
+        <a href="{{ url_for('demande_oid') }}" class="oid-mini-btn">❓ Votre OID n’existe pas ?</a>
+        <a href="{{ url_for('mes_demandes_oid') }}" class="oid-mini-btn">📑 Voir mes demandes</a>
+    </div>
+
 
         <label>Identifiant (OID) :</label>
-        <input type="text" name="identifiant" required>
-
-        <label>Type de valeur :</label>
-        <input type="text" name="typeValeur" placeholder="INTEGER / STRING / etc.">
+        <select name="identifiant" required>
+            <option value="">-- Sélectionnez un OID --</option>
+            {% for oid in oids %}
+                <option value="{{ oid['identifiant'] }}">
+                    {{ oid['nomParametre'] }} — {{ oid['identifiant'] }}
+                </option>
+            {% endfor %}
+        </select>
 
         <label>Équipement associé :</label>
         <select name="equipement_id">
             {% for eq in equipements %}
-            <option value="{{ eq.id }}">{{ eq.nom }}</option>
+                <option value="{{ eq.id }}">{{ eq.nom }}</option>
             {% endfor %}
         </select>
 
@@ -116,8 +216,8 @@
         </div>
 
         <div>
-            <button type="submit">💾 Enregistrer</button>
-            <button type="button" class="back-btn" onclick="window.location.href='/config'">↩️ Retour</button>
+            <button type="submit" class="btn-main">💾 Enregistrer</button>
+            <button type="button" class="btn-secondary" onclick="window.location.href='/config'">↩️ Retour</button>
         </div>
     </form>
 </body>
