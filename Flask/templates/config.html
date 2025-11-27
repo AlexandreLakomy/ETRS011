@@ -1,27 +1,20 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
+{% extends 'base.html' %}
+{% block title %}Configuration{% endblock %}
+{% block content %}
+<div class="page-container">
     <meta charset="UTF-8">
     <title>Configuration - Outil de Supervision</title>
     <style>
-        body {
-            background-color: #f7f9fc;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 40px;
-        }
-
-        h1, h2 {
+        .dashboard-title {
             color: #1b2a4e;
+            text-align: center;
+            margin-top: 40px;
         }
-
-        h1 { font-size: 28px; margin-bottom: 10px; }
-        h2 { font-size: 22px; margin-top: 50px; }
 
         table {
             margin: 30px auto;
             border-collapse: collapse;
-            width: 90%;
+            width: 95%;
             background: white;
             border-radius: 8px;
             overflow: hidden;
@@ -30,32 +23,42 @@
 
         th, td {
             border: 1px solid #e0e0e0;
-            padding: 12px;
+            padding: 10px;
             text-align: center;
         }
 
         th {
-            background-color: #4A6785;
+            background-color: #1b2a4e;
             color: white;
+            font-weight: 600;
         }
 
         tr:nth-child(even) { background-color: #f8f9fb; }
+
+        .filter-input {
+            display: block;
+            margin: 15px auto;
+            padding: 8px;
+            width: 50%;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
 
         button {
             background-color: #4A6785;
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 8px 15px;
             border-radius: 6px;
             cursor: pointer;
-            margin: 10px;
             font-size: 14px;
+            margin: 10px;
         }
 
         button:hover { background-color: #39536a; }
 
         .action-btn {
-            padding: 6px 12px;
+            padding: 5px 10px;
             font-size: 13px;
             border-radius: 4px;
         }
@@ -70,26 +73,57 @@
         .home-btn:hover { background-color: #5a6268; }
 
         .no-data {
+            text-align: center;
             font-style: italic;
             color: #777;
             margin-top: 20px;
         }
 
-        .hidden-row { display: none; }
+        .seuil-min {
+            color: #1b2a4e;
+            background-color: rgba(52, 152, 219, 0.1);
+            font-weight: 500;
+            padding: 3px 6px;
+        }
 
-        .filter-input {
-            margin-top: 15px;
-            padding: 8px;
-            width: 50%;
+        .seuil-warning {
+            color: #1b2a4e;
+            background-color: rgba(243, 156, 18, 0.1);
+            font-weight: 500;
+            padding: 3px 6px;
+        }
+
+        .seuil-max {
+            color: #1b2a4e;
+            background-color: rgba(231, 76, 60, 0.1);
+            font-weight: 500;
+            padding: 3px 6px;
+        }
+
+        .alert-toggle {
+            appearance: none;
+            width: 22px;
+            height: 22px;
             border-radius: 6px;
-            border: 1px solid #ccc;
+            border: 2px solid #ccc;
+            background-color: #f8f9fb;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .alert-toggle:checked {
+            background-color: #2ecc71;
+            border-color: #27ae60;
+        }
+
+        .alert-toggle:not(:checked) {
+            background-color: #e74c3c;
+            border-color: #c0392b;
         }
     </style>
 
 <script>
-let activeFilters = {}; // garde l’état du filtre actif par table
-
-// 🔎 Filtrage dynamique des tables
+let activeFilters = {};
 function filterTable(tableId, searchValue) {
     const table = document.getElementById(tableId);
     const rows = table.getElementsByTagName("tr");
@@ -98,7 +132,7 @@ function filterTable(tableId, searchValue) {
     const button = document.getElementById(buttonId);
 
     const hasFilter = text.trim() !== "";
-    activeFilters[tableId] = hasFilter; // on retient si un filtre est actif
+    activeFilters[tableId] = hasFilter;
 
     for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
@@ -112,11 +146,9 @@ function filterTable(tableId, searchValue) {
             }
         }
 
-        // Si un filtre est actif → afficher uniquement les correspondances
         if (hasFilter) {
             row.style.display = match ? "table-row" : "none";
         } else {
-            // Si aucun filtre → comportement normal
             const showing = button && button.dataset.showing === "true";
             if (row.classList.contains("extra-row")) {
                 row.style.display = showing ? "table-row" : "none";
@@ -126,30 +158,25 @@ function filterTable(tableId, searchValue) {
         }
     }
 
-    // Met à jour le texte du bouton sans perturber l'état d'affichage
     if (!hasFilter && button) {
-        button.textContent = button.dataset.showing === "true" ? "Afficher moins" : "Afficher plus";
+        button.textContent = button.dataset.showing === "true"
+            ? "Afficher moins" : "Afficher plus";
     }
 }
 
-// 🔁 Afficher / masquer les lignes supplémentaires
 function toggleRows(tableId, buttonId) {
     const rows = document.querySelectorAll(`#${tableId} .extra-row`);
     const button = document.getElementById(buttonId);
     const showing = button.dataset.showing === "true";
     const hasFilter = activeFilters[tableId] === true;
 
-    // Si un filtre est actif, on ne masque/affiche que les lignes visibles du filtre
     if (hasFilter) {
         rows.forEach(row => {
-            // “Afficher plus” → montrer uniquement les lignes filtrées déjà visibles
             if (!showing && row.style.display !== "none") {
                 row.style.display = "table-row";
             }
-            // “Afficher moins” → garder visibles seulement les 10 premières correspondances
         });
 
-        // Pour “Afficher moins” pendant un filtre : ne pas vider le tableau
         if (showing) {
             let visibleCount = 0;
             for (let i = 1; i < rows.length; i++) {
@@ -163,56 +190,51 @@ function toggleRows(tableId, buttonId) {
             }
         }
     } else {
-        // Si pas de filtre → comportement normal
         rows.forEach(row => row.style.display = showing ? "none" : "table-row");
     }
 
-    // Mise à jour du bouton
     button.textContent = showing ? "Afficher plus" : "Afficher moins";
     button.dataset.showing = (!showing).toString();
 }
-
-
-document.addEventListener('DOMContentLoaded', () => {
-
-  document.querySelectorAll('.alert-toggle').forEach(checkbox => {
-    checkbox.addEventListener('change', async () => {
-      const oidId = checkbox.dataset.oidId;
-      const newState = checkbox.checked;
-
-      try {
-        const response = await fetch(`/update_alert/${oidId}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ alerte_active: newState })
-        });
-        const result = await response.json();
-
-        if (result.success) {
-          console.log(`🔔 OID ${oidId} alerting = ${newState}`);
-        } else {
-          alert("Erreur lors de la mise à jour de l'alerte.");
-        }
-      } catch (error) {
-        console.error("Erreur réseau :", error);
-        alert("Impossible de contacter le serveur.");
-      }
+async function demandeSuppressionEquipement(id) {
+    const response = await fetch(`/demande_suppression_equipement/${id}`, {
+        method: "POST"
     });
-  });
 
-});
+    const data = await response.text();
 
+    if (data === "OK") {
+        const btn = document.getElementById(`delete-eq-${id}`);
+        btn.textContent = "⏳ Demande envoyée";
+        btn.disabled = true;
+        btn.style.background = "#7f8c8d";
+        btn.style.cursor = "not-allowed";
+    }
+}
+
+async function demandeSuppressionOid(id) {
+    const response = await fetch(`/demande_suppression_oid/${id}`, {
+        method: "POST"
+    });
+
+    const data = await response.json();
+
+    if (data.success === true) {
+        const btn = document.getElementById(`delete-oid-${id}`);
+        btn.textContent = "⏳ Demande envoyée";
+        btn.disabled = true;
+        btn.style.background = "#7f8c8d";
+        btn.style.cursor = "not-allowed";
+    }
+}
 </script>
 
-</head>
-<body>
-    <!-- 🔧 Équipements -->
-    <h1>Configuration des Équipements</h1>
+    <h2 class="dashboard-title">Configuration des Équipements</h2>
     <button class="home-btn" onclick="window.location.href='/'">🏠 Retour à l'accueil</button>
     <button onclick="window.location.href='/ajouter_equipement'">➕ Ajouter un équipement</button>
 
-    <input type="text" class="filter-input" 
-           placeholder="🔍 Rechercher un équipement..." 
+    <input type="text" class="filter-input"
+           placeholder="🔍 Rechercher un équipement..."
            onkeyup="filterTable('equipement-table', this.value)">
 
     {% if equipements %}
@@ -226,6 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <th>Intervalle (s)</th>
                 <th>Actions</th>
             </tr>
+
             {% for eq in equipements %}
             <tr class="{% if loop.index > 10 %}extra-row hidden-row{% endif %}">
                 <td>{{ eq.id }}</td>
@@ -234,16 +257,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>{{ eq.type }}</td>
                 <td>{{ eq.community }}</td>
                 <td>{{ eq.intervalle }}</td>
+
                 <td>
-                    <button class="action-btn edit-btn" onclick="window.location.href='/modifier_equipement/{{ eq.id }}'">✏️ Modifier</button>
-                    <button class="action-btn delete-btn" onclick="confirmDelete('{{ eq.id }}', '{{ eq.nom }}')">🗑️ Supprimer</button>
+                    <button class="action-btn edit-btn"
+                            onclick="window.location.href='/modifier_equipement/{{ eq.id }}'">
+                        ✏️ Modifier
+                    </button>
+
+                    {% if eq.demande_status == 'PENDING' %}
+                        <button class="action-btn"
+                                disabled
+                                style="background:#7f8c8d; cursor:not-allowed;">
+                            ⏳ Demande envoyée
+                        </button>
+                    {% else %}
+                        <button type="button"
+                                class="action-btn delete-btn"
+                                id="delete-eq-{{ eq.id }}"
+                                onclick="demandeSuppressionEquipement({{ eq.id }})">
+                            🗑️ Demander suppression
+                        </button>
+
+                    {% endif %}
                 </td>
+
             </tr>
             {% endfor %}
         </table>
 
         {% if equipements|length > 10 %}
-            <button id="showMoreEquip" data-showing="false" onclick="toggleRows('equipement-table','showMoreEquip')">
+            <button id="showMoreEquip" data-showing="false"
+                onclick="toggleRows('equipement-table','showMoreEquip')">
                 Afficher plus
             </button>
         {% endif %}
@@ -251,13 +295,14 @@ document.addEventListener('DOMContentLoaded', () => {
         <p class="no-data">Aucun équipement enregistré pour le moment.</p>
     {% endif %}
 
-    <!-- 🔧 OIDs -->
-    <h2>Configuration des OIDs</h2>
+    <br>
+
+    <h2 class="dashboard-title">Configuration des OIDs</h2>
     <button class="home-btn" onclick="window.location.href='/'">🏠 Retour à l'accueil</button>
     <button onclick="window.location.href='/ajouter_oid'">➕ Ajouter un OID</button>
 
-    <input type="text" class="filter-input" 
-           placeholder="🔍 Rechercher un OID ou un équipement associé..." 
+    <input type="text" class="filter-input"
+           placeholder="🔍 Rechercher un OID ou un équipement associé..."
            onkeyup="filterTable('tableOids', this.value)">
 
     {% if oids %}
@@ -268,9 +313,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 <th>Identifiant (OID)</th>
                 <th>Type</th>
                 <th>Équipement associé</th>
+                <th>Seuil Min</th>
+                <th>Seuil Warning</th>
+                <th>Seuil Max</th>
                 <th>Alerting</th>
                 <th>Actions</th>
             </tr>
+
             {% for oid in oids %}
             <tr class="{% if loop.index > 10 %}extra-row hidden-row{% endif %}">
                 <td>{{ oid.id }}</td>
@@ -278,27 +327,80 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>{{ oid.identifiant }}</td>
                 <td>{{ oid.typeValeur }}</td>
                 <td>{{ oid.equipement_nom or "Aucun" }}</td>
+
+                <td class="seuil-min">{{ oid.seuilMin if oid.seuilMin is not none else '-' }}</td>
+                <td class="seuil-warning">{{ oid.seuilWarning if oid.seuilWarning is not none else '-' }}</td>
+                <td class="seuil-max">{{ oid.seuilMax if oid.seuilMax is not none else '-' }}</td>
+
                 <td>
-                <input type="checkbox"
+                    <input type="checkbox"
                         class="alert-toggle"
                         data-oid-id="{{ oid.id }}"
                         {% if oid.alerte_active == 1 %}checked{% endif %}>
                 </td>
+
                 <td>
-                    <button class="action-btn edit-btn" onclick="window.location.href='/modifier_oid/{{ oid.id }}'">✏️ Modifier</button>
-                    <button class="action-btn delete-btn" onclick="confirmDeleteOID('{{ oid.id }}', '{{ oid.nomParametre }}')">🗑️ Supprimer</button>
+                    <button class="action-btn edit-btn"
+                            onclick="window.location.href='/modifier_oid/{{ oid.id }}'">
+                        ✏️ Modifier
+                    </button>
+
+                    {% if oid.demande_status == 'PENDING' %}
+                        <button class="action-btn"
+                                disabled
+                                style="background:#7f8c8d; cursor:not-allowed;">
+                            ⏳ Demande envoyée
+                        </button>
+                    {% else %}
+                        <button type="button"
+                                class="action-btn delete-btn"
+                                id="delete-oid-{{ oid.id }}"
+                                onclick="demandeSuppressionOid({{ oid.id }})">
+                            🗑️ Demander suppression
+                        </button>
+                    {% endif %}
                 </td>
+
             </tr>
             {% endfor %}
         </table>
 
         {% if oids|length > 10 %}
-            <button id="showMoreOids" data-showing="false" onclick="toggleRows('tableOids','showMoreOids')">
+            <button id="showMoreOids" data-showing="false"
+                onclick="toggleRows('tableOids','showMoreOids')">
                 Afficher plus
             </button>
         {% endif %}
     {% else %}
         <p class="no-data">Aucun OID enregistré pour le moment.</p>
     {% endif %}
-</body>
-</html>
+
+<script>
+document.querySelectorAll(".alert-toggle").forEach(toggle => {
+    toggle.addEventListener("change", async function () {
+        const oidId = this.dataset.oidId;
+        const newState = this.checked;
+
+        try {
+            const res = await fetch(`/update_alert/${oidId}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ alerte_active: newState })
+            });
+
+            const data = await res.json();
+            if (!data.success) {
+                alert("Erreur lors de la mise à jour.");
+            }
+        } catch (err) {
+            alert("Erreur réseau.");
+            this.checked = !newState; // rollback de sécurité
+        }
+    });
+});
+</script>
+
+</div>
+{% endblock %}

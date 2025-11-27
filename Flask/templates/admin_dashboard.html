@@ -1,0 +1,148 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Tableau de bord - Administration{% endblock %}
+
+{% block content %}
+<h1>📊 Tableau de bord d'administration</h1>
+<p>Voici toutes les demandes en attente de validation par l’administrateur.</p>
+
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+
+    th, td {
+        padding: 12px 16px;
+        text-align: left;
+    }
+
+    th {
+        background-color: #1f3b73;
+        color: white;
+        font-weight: 600;
+    }
+
+    tr:nth-child(even) {
+        background-color: #f2f4f8;
+    }
+
+    .category-title {
+        margin-top: 30px;
+        font-size: 1.3em;
+        color: #1f3b73;
+        border-left: 5px solid #4A6785;
+        padding-left: 10px;
+    }
+
+    button {
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        color: white;
+        font-weight: bold;
+        transition: 0.2s;
+    }
+
+    .btn-validate {
+        background-color: #2e8b57;
+    }
+
+    .btn-validate:hover {
+        background-color: #256b45;
+    }
+
+    .btn-refuse {
+        background-color: #b23b3b;
+    }
+
+    .btn-refuse:hover {
+        background-color: #8a2c2c;
+    }
+
+    .no-data {
+        text-align: center;
+        padding: 15px;
+        color: #777;
+    }
+</style>
+
+{% set categories = {
+    'NEW_OID': '➕ OID à valider',
+    'DELETE_OID': '❌ OID à supprimer',
+    'DELETE_EQ': '🖥️ Équipements à supprimer',
+    'NEW_TEMPLATE': '📘 Templates à valider'
+} %}
+
+{% for type, title in categories.items() %}
+    <h2 class="category-title">{{ title }}</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Utilisateur</th>
+                <th>Type d’action</th>
+                <th>Commentaire</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set demandes_cat = demandes | selectattr("action_type", "equalto", type) | list %}
+            {% if demandes_cat %}
+                {% for d in demandes_cat %}
+                <tr>
+                    <td>{{ d.id }}</td>
+                    <td>{{ d.user_id }}</td>
+                    <td>{{ d.action_type }}</td>
+                    <td>{{ d.commentaire or "—" }}</td>
+                    <td>{{ d.created_at or "—" }}</td>
+                    <td>
+                        <button class="btn-validate" onclick="validerDemande({{ d.id }})">Valider</button>
+                        <button class="btn-refuse" onclick="refuserDemande({{ d.id }})">Refuser</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr><td colspan="6" class="no-data">Aucune demande en attente</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+{% endfor %}
+
+<script>
+async function validerDemande(id) {
+    const res = await fetch(`/admin/valider/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+    });
+    if (res.ok) {
+        alert("✅ Demande validée !");
+        location.reload();
+    } else {
+        alert("❌ Erreur : " + res.status);
+    }
+}
+
+async function refuserDemande(id) {
+    const res = await fetch(`/admin/refuser/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+    });
+    if (res.ok) {
+        alert("❌ Demande refusée !");
+        location.reload();
+    } else {
+        alert("⚠️ Erreur : " + res.status);
+    }
+}
+</script>
+
+
+{% endblock %}

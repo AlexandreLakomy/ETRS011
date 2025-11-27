@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% block title %}Template{% endblock %}
+{% block content %}
+<div class="page-container">
+
+    <style>
+        .template-form {
+            background: white;
+            width: 700px;
+            margin: 30px auto;
+            padding: 25px 35px;
+            border-radius: 10px;
+            box-shadow: 0 0 12px rgba(0,0,0,0.1);
+        }
+
+        .template-form h1 {
+            font-size: 26px;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #1b2a4e;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 12px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+
+        .oid-block {
+            margin-top: 12px;
+        }
+
+        .add-btn {
+            background-color: #4A6785;
+            color: white;
+            padding: 8px 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            border: none;
+        }
+
+        .add-btn:hover { background-color: #39536a; }
+
+        .submit-btn {
+            background-color: #ba4a70;
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            font-size: 15px;
+            border: none;
+        }
+
+        .submit-btn:hover { background-color: #a03c5d; }
+
+        /* ======= Templates existantes ======= */
+
+        .templates-title {
+            text-align:center;
+            font-size:26px;
+            color:#1b2a4e;
+            margin-top:40px;
+            margin-bottom:25px;
+        }
+
+        .template-card {
+            background:white;
+            padding:25px;
+            border-radius:12px;
+            box-shadow:0 3px 12px rgba(0,0,0,0.12);
+            margin-bottom:30px;
+        }
+
+        .template-card h3 {
+            text-align:center;
+            color:#34495e;
+            margin-top:0;
+            margin-bottom:15px;
+            font-size:20px;
+        }
+
+        .template-table {
+            width:100%;
+            border-collapse:collapse;
+            margin-top:10px;
+        }
+
+        .template-table th {
+            background:#1b2a4e;
+            color:white;
+            padding:10px;
+            text-align:left;
+        }
+
+        .template-table td {
+            padding:10px;
+            border-bottom:1px solid #e0e0e0;
+        }
+    </style>
+
+
+    <!-- ===================== FORMULAIRE ===================== -->
+
+    <form class="template-form" method="POST" action="/creer_template">
+        <h1>Créer un Template</h1>
+
+        <label>Nom du template :</label>
+        <input type="text" name="nom_template" required>
+
+        <h3>Ajouter des OID validés</h3>
+
+        <div id="oids-container">
+            <div class="oid-block">
+                <select name="oid[]">
+                    <option value="">-- Sélectionner un OID validé --</option>
+                    {% for oid in catalogue_oids %}
+                    <option value="{{ oid.id }}">
+                        {{ oid.nomParametre }} — {{ oid.identifiant }} ({{ oid.typeValeur }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <button type="button" class="add-btn" onclick="ajouterOID()">➕ Ajouter un OID</button>
+
+        <button type="submit" class="submit-btn">📨 Envoyer pour validation</button>
+    </form>
+
+
+    <script>
+    function ajouterOID() {
+        const container = document.getElementById("oids-container");
+
+        const block = document.createElement("div");
+        block.classList.add("oid-block");
+
+        block.innerHTML = `
+            <select name="oid[]">
+                <option value="">-- Sélectionner un OID validé --</option>
+                {% for oid in catalogue_oids %}
+                <option value="{{ oid.id }}">
+                    {{ oid.nomParametre }} — {{ oid.identifiant }} ({{ oid.typeValeur }})
+                </option>
+                {% endfor %}
+            </select>
+        `;
+
+        container.appendChild(block);
+    }
+    </script>
+
+
+    <!-- ===================== LISTE DES TEMPLATES ===================== -->
+
+    <h2 class="templates-title">📚 Templates existantes</h2>
+
+    {% if templates %}
+    <div style="width: 700px; margin:auto;">
+
+        {% for t in templates %}
+        <div class="template-card">
+
+            <h3>{{ t.nom }}</h3>
+
+            {% if template_oids[t.id] %}
+            <table class="template-table">
+                <thead>
+                    <tr>
+                        <th>Nom du paramètre</th>
+                        <th>OID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for oid in template_oids[t.id] %}
+                    <tr>
+                        <td style="font-weight:600;">{{ oid.nomParametre }}</td>
+                        <td style="font-family:monospace;">{{ oid.identifiant }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+                <p style="color:#888; text-align:center;">Aucun OID dans cette template.</p>
+            {% endif %}
+
+        </div>
+        {% endfor %}
+
+    </div>
+
+    {% else %}
+        <p style="text-align:center; color:#888;">Aucune template validée pour le moment.</p>
+    {% endif %}
+
+</div>
+{% endblock %}

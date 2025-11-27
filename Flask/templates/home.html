@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Accueil - Supervision SNMP{% endblock %}
+
+{% block content %}
+<section class="home-connected">
+    <h2>Bienvenue, {{ user_prenom }} {{ user_nom }} 👋</h2>
+    <p>Heureux de vous revoir sur l’outil de supervision réseau.</p>
+</section>
+
+<style>
+.home-connected {
+    text-align: center;
+    margin-top: 100px;
+}
+
+.cards {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 30px;
+    margin-top: 40px;
+}
+
+.card {
+    background: #f5f6fa;
+    padding: 20px;
+    border-radius: 12px;
+    width: 280px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.card h3 {
+    color: #1b2a4e;
+}
+
+.btn {
+    background-color: #1b2a4e;
+    color: white;
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    display: inline-block;
+    margin-top: 10px;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.btn:hover {
+    background-color: #2e4372;
+}
+
+.logout-btn {
+    display: inline-block;
+    margin-top: 40px;
+    text-decoration: none;
+    color: #d9534f;
+    font-weight: 600;
+}
+
+.logout-btn:hover {
+    text-decoration: underline;
+}
+</style>
+{% endblock %}

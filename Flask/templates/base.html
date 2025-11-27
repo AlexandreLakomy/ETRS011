@@ -4,22 +4,37 @@
     <meta charset="UTF-8">
     <title>{% block title %}Supervision SNMP{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- Lien vers le style -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <header>
-        <h1>Outil de Supervision Réseau</h1>
+        <div class="header-bar">
+            <div class="header-left"></div> <!-- bloc vide pour équilibrer -->
+            
+            <h1 class="header-title">Outil de Supervision Réseau</h1>
+            
+            {% if session.get('user_id') %}
+            <div class="user-panel">
+                <span class="user-name">{{ session.get('user_prenom') }} {{ session.get('user_nom') }}</span>
+            </div>
+            {% else %}
+            <div class="header-right"></div> <!-- compense quand pas connecté -->
+            {% endif %}
+        </div>
+
         <nav>
             <ul>
-                <li><a href="{{ url_for('index') }}">Accueil</a></li>
+                <li><a href="{{ url_for('home') }}">Accueil</a></li>
                 <li><a href="{{ url_for('dashboard') }}">Tableau de bord</a></li>
-                <li><a href="{{ url_for('logs') }}">Logs</a></li>
+                <li><a href="{{ url_for('events') }}">Évènements</a></li>
                 <li><a href="{{ url_for('config') }}">Configuration</a></li>
-                <li><a href="{{ url_for('snmp_check') }}">Supervision SNMP</a></li>
-                <li><a href="{{ url_for('admin') }}">Administration</a></li>
-                <li><a href="{{ url_for('login') }}">Connexion</a></li>
+                <li><a href="{{ url_for('creer_template') }}">Template</a></li>
+                <li><a href="{{ url_for('mes_demandes_oid') }}">Mes demandes</a></li>
+                {% if session.get('user_id') %}
+                    <li><a href="{{ url_for('logout') }}" class="logout-link">Se déconnecter</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('login') }}">Connexion</a></li>
+                {% endif %}
             </ul>
         </nav>
     </header>
@@ -31,5 +46,86 @@
     <footer>
         <p>© 2025 - Projet de Supervision SNMP | IUT Réseaux & Télécoms</p>
     </footer>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: "Segoe UI", sans-serif;
+            background-color: #f5f7fa;
+        }
+
+        header {
+            background-color: #1b2a4e;
+            color: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        /* Barre du haut */
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 30px;
+        }
+
+        .header-left {
+            min-width: 180px; /* largeur compensatrice */
+        }
+
+        .header-title {
+            text-align: center;
+            flex: 1;
+            margin: 0;
+            font-size: 1.6em;
+        }
+
+        .user-panel {
+            min-width: 180px; /* même largeur pour équilibrer */
+            text-align: right;
+        }
+
+        .user-name {
+            font-weight: 500;
+            color: #cfe2ff;
+        }
+
+        /* Menu centré */
+        nav ul {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            list-style: none;
+            margin: 0;
+            padding: 0 20px;
+            gap: 22px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+
+        nav a:hover {
+            color: #dfe6f2;
+        }
+
+        .logout-link {
+            color: #ffb3b3;
+        }
+
+        .logout-link:hover {
+            color: #ffdede;
+        }
+
+        footer {
+            background-color: #1b2a4e;
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            margin-top: 40px;
+        }
+    </style>
 </body>
 </html>

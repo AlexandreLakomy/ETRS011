@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Demande d’ajout d’OID</title>
+    <style>
+        body {
+            background-color: #f7f9fc;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 40px;
+        }
+
+        form {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            width: 380px;
+            margin: 0 auto;
+            box-shadow: 0 0 12px rgba(0,0,0,0.1);
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-top: 12px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            background-color: #4A6785;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            margin-top: 10px;
+        }
+
+        button:hover { background-color: #39536a; }
+        .back-btn { background-color: #6c757d; }
+        .back-btn:hover { background-color: #5a6268; }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            resize: vertical;
+            font-family: Arial, sans-serif;
+        }
+
+    </style>
+</head>
+<body>
+    <h1>Demande d’ajout d’un nouvel OID</h1>
+    <form method="POST">
+        <label>Nom du paramètre :</label>
+        <input type="text" name="nomParametre" required>
+
+        <label>Identifiant (OID) :</label>
+        <input type="text" name="identifiant" required>
+
+        <label>Type de valeur :</label>
+        <input type="text" name="typeValeur" placeholder="INTEGER / STRING / etc." required>
+
+        <label>Commentaire (optionnel) :</label>
+        <textarea name="commentaire" placeholder="Votre commentaire ..." rows="3"></textarea>
+
+
+        <button type="submit">📤 Envoyer la demande</button>
+        <button type="button" class="back-btn" onclick="window.location.href='/ajouter_oid'">↩️ Retour</button>
+    </form>
+</body>
+</html>

@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Liste des OIDs{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>📋 Liste des OIDs</h1>
+    <p>Voici la liste de tous les OIDs disponibles dans le système.</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nom du paramètre</th>
+                <th>Identifiant (OID)</th>
+                <th>Type de valeur</th>
+                <th>Équipement</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if oids %}
+                {% for oid in oids %}
+                <tr>
+                    <td>{{ oid.id }}</td>
+                    <td>{{ oid.nomParametre }}</td>
+                    <td>{{ oid.identifiant }}</td>
+                    <td>{{ oid.typeValeur }}</td>
+                    <td>{{ oid.equipement_nom or "—" }}</td>
+                    <td>
+                        {% if oid.catalogue_status == "PENDING" %}
+                            <span style="color:#d98c00; font-weight:bold;">⏳ En attente</span>
+                        {% elif oid.catalogue_status == "APPROVED" %}
+                            <span style="color:#007f00; font-weight:bold;">✅ Validé</span>
+                        {% elif oid.catalogue_status == "REJECTED" %}
+                            <span style="color:#b50000; font-weight:bold;">❌ Refusé</span>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr><td colspan="6" class="no-data">Aucun OID enregistré pour le moment.</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    <a href="{{ url_for('ajouter_oid') }}" class="btn btn-primary">➕ Ajouter un OID</a>
+</div>
+
+<style>
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    background: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+th {
+    background-color: #1f3b73;
+    color: white;
+    padding: 10px;
+}
+td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+.no-data {
+    text-align: center;
+    color: #777;
+    padding: 15px;
+}
+.btn {
+    display: inline-block;
+    margin-top: 20px;
+    background-color: #4A6785;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 6px;
+    text-decoration: none;
+}
+.btn:hover {
+    background-color: #39536a;
+}
+</style>
+{% endblock %}

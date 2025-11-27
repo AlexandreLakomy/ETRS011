@@ -1,0 +1,103 @@
+{% extends "base_public.html" %}
+{% block title %}Connexion - Outil de Supervision{% endblock %}
+
+{% block content %}
+<section class="login-container">
+    <h2>Connexion</h2>
+
+    <form method="POST" action="{{ url_for('login') }}" class="login-form">
+        <input type="email" name="email" placeholder="Adresse e-mail" required>
+        <input type="password" name="mot_de_passe" placeholder="Mot de passe" required>
+
+        <div class="button-group">
+            <a href="{{ url_for('index') }}" class="btn-accueil">Retour à l'accueil</a>
+            <button type="submit" class="btn-action">Se connecter</button>
+        </div>
+
+    </form>
+
+    {% if message %}
+    <p class="error-message">{{ message }}</p>
+    {% endif %}
+</section>
+
+<style>
+.login-container {
+    text-align: center;
+    margin-top: 100px;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    width: 320px;
+    margin: 0 auto;
+}
+
+.login-form input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1em;
+}
+
+.button-group {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    gap: 10px;
+}
+
+.btn-action {
+    flex: 1;
+    background-color: #1b2a4e;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+    text-decoration: none;
+    font-family: inherit;
+    font-size: 1em;
+    display: inline-block;
+}
+
+.btn-action:hover {
+    background-color: #2e4372;
+}
+
+.btn-accueil {
+    flex: 1;
+    background-color: #6c757d;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+    text-decoration: none;
+    font-family: inherit;
+    font-size: 1em;
+    display: inline-block;
+}
+
+.btn-accueil:hover {
+    background-color: #5a6268;
+}
+
+
+.error-message {
+    color: #d9534f;
+    margin-top: 10px;
+    font-weight: 600;
+}
+</style>
+{% endblock %}

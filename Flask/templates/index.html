@@ -1,33 +1,58 @@
-{% extends "base.html" %}
+{% extends "base_public.html" %}
 
-{% block title %}Accueil - Supervision SNMP{% endblock %}
+{% block title %}Accueil - Supervision Réseau{% endblock %}
 
 {% block content %}
-<section class="welcome">
-    <h2>Bienvenue sur la plateforme de supervision</h2>
-    <p>
-        Ce site permet de surveiller en temps réel les équipements réseau via le protocole <strong>SNMP</strong>.  
-        Vous pouvez consulter l’état du parc, visualiser des statistiques et accéder aux journaux d’activité.
+<section class="home-container">
+    <h2 class="home-title">Bienvenue sur l’Outil de Supervision Réseau</h2>
+    <p class="home-subtitle">
+        Surveillez vos équipements, analysez vos alertes et consultez vos statistiques en temps réel.
     </p>
 
-    <div class="cards">
-        <div class="card">
-            <h3>Tableau de bord</h3>
-            <p>Consultez l’état global du réseau et les alertes en temps réel.</p>
-            <a href="{{ url_for('dashboard') }}" class="btn">Accéder</a>
-        </div>
-
-        <div class="card">
-            <h3>Logs</h3>
-            <p>Consultez les journaux et événements du système de supervision.</p>
-            <a href="{{ url_for('logs') }}" class="btn">Voir les logs</a>
-        </div>
-
-        <div class="card">
-            <h3>Configuration</h3>
-            <p>Ajoutez ou modifiez les équipements à superviser.</p>
-            <a href="{{ url_for('config') }}" class="btn">Configurer</a>
-        </div>
+    <div class="home-buttons">
+        <a href="{{ url_for('register') }}" class="btn-home">📝 Inscription</a>
+        <a href="{{ url_for('login') }}" class="btn-home">🔐 Connexion</a>
     </div>
 </section>
+
+<style>
+.home-container {
+    text-align: center;
+    margin-top: 140px;
+}
+
+.home-title {
+    font-size: 2.2em;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.home-subtitle {
+    font-size: 1.1em;
+    margin-bottom: 40px;
+    color: #555;
+}
+
+.home-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+}
+
+.btn-home {
+    background-color: #1b2a4e;
+    color: white;
+    text-decoration: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 1em;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-home:hover {
+    background-color: #c23838;
+    transform: scale(1.05);
+}
+</style>
 {% endblock %}

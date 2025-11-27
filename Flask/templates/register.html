@@ -1,0 +1,132 @@
+{% extends "base_public.html" %}
+
+{% block title %}Inscription - Outil de Supervision{% endblock %}
+
+{% block content %}
+<section class="register-container">
+    <h2>Créer un compte</h2>
+
+    <form method="POST" action="{{ url_for('register') }}" class="register-form" onsubmit="return validateForm()">
+        <input type="text" name="nom" placeholder="Nom" required>
+        <input type="text" name="prenom" placeholder="Prénom" required>
+        <input type="email" name="email" placeholder="Adresse e-mail" required>
+
+        <div class="password-container">
+            <input type="password" name="mot_de_passe" id="mot_de_passe" placeholder="Mot de passe" required>
+            <span class="toggle-btn" onclick="togglePassword('mot_de_passe', this)">
+                <i class="fa fa-eye-slash"></i>
+            </span>
+        </div>
+
+        <div class="password-container">
+            <input type="password" name="confirm_mot_de_passe" id="confirm_mot_de_passe" placeholder="Confirmez le mot de passe" required>
+            <span class="toggle-btn" onclick="togglePassword('confirm_mot_de_passe', this)">
+                <i class="fa fa-eye-slash"></i>
+            </span>
+        </div>
+
+        <button type="submit">S'inscrire</button>
+    </form>
+
+    {% if message %}
+    <p class="message">{{ message }}</p>
+    {% endif %}
+</section>
+
+<!-- Font Awesome pour les icônes -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+.register-container {
+    text-align: center;
+    margin-top: 100px;
+}
+
+.register-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    width: 340px;
+    margin: 0 auto;
+}
+
+.register-form input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1em;
+    box-sizing: border-box;
+}
+
+.password-container {
+    position: relative;
+    width: 100%;
+}
+
+.password-container input {
+    padding-right: 40px;
+}
+
+.toggle-btn {
+    position: absolute;
+    right: 10px;
+    top: 9px;
+    cursor: pointer;
+    color: #777;
+}
+
+.toggle-btn:hover {
+    color: #1b2a4e;
+}
+
+.register-form button[type="submit"] {
+    background-color: #1b2a4e;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    width: 100%;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.register-form button[type="submit"]:hover {
+    background-color: #2e4372;
+}
+
+.message {
+    margin-top: 15px;
+    font-weight: 600;
+}
+</style>
+
+<script>
+function togglePassword(id, icon) {
+    const input = document.getElementById(id);
+    const eyeIcon = icon.querySelector("i");
+
+    if (input.type === "password") {
+        input.type = "text";
+        eyeIcon.classList.remove("fa-eye-slash");
+        eyeIcon.classList.add("fa-eye");
+    } else {
+        input.type = "password";
+        eyeIcon.classList.remove("fa-eye");
+        eyeIcon.classList.add("fa-eye-slash");
+    }
+}
+
+function validateForm() {
+    const pwd = document.getElementById("mot_de_passe").value;
+    const confirm = document.getElementById("confirm_mot_de_passe").value;
+    if (pwd !== confirm) {
+        alert("Les mots de passe ne correspondent pas !");
+        return false;
+    }
+    return true;
+}
+</script>
+{% endblock %}
